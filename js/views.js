@@ -555,8 +555,6 @@ export const statsView = {
       { name: '餐饮', sum: ms.sum },
       ...os.rows.map((r) => ({ name: r.name, sum: r.sum })),
     ].sort((a, b) => b.sum - a.sum).slice(0, 3);
-    const elapsed = Math.max(d.daysElapsed(mk), 1);
-
     return `
       ${monthNav()}
       <div class="screen">
@@ -589,43 +587,36 @@ export const statsView = {
         <div class="section">
           <div class="section-head">
             <h2>三餐</h2>
-            <span class="hint">日均按已过 ${elapsed} 天算</span>
+            <span class="hint">天数＝有记录的日期数</span>
           </div>
           <div class="table-wrap">
             <table class="data">
               <thead>
                 <tr>
-                  <th>餐次</th><th>月总额</th><th>顿数</th><th>单均</th><th>日均</th><th>子预算</th><th>状态</th>
+                  <th>餐次</th><th>总额</th><th>天数</th><th>日均</th>
                 </tr>
               </thead>
               <tbody>
                 ${ms.rows.map((r) => (r.id === 'snack'
-                  // 零食只统计合计，不算顿数/单均/日均，也没有子预算
+                  // 零食只显示合计。
                   ? `<tr class="is-tap" data-meal-row="${r.id}">
                        <td class="rowname">${r.name}</td>
                        <td>${fen.compact(r.sum)}</td>
-                       <td class="muted" colspan="5" style="text-align:right">—</td>
+                       <td class="muted" colspan="3" style="text-align:right">—</td>
                      </tr>`
                   : `<tr class="is-tap" data-meal-row="${r.id}">
                        <td class="rowname">${r.name}</td>
                        <td>${fen.compact(r.sum)}</td>
-                       <td>${r.count}</td>
-                       <td>${r.avg == null ? '<span class="muted">—</span>' : fen.compact(r.avg)}</td>
-                       <td>${fen.compact(r.daily)}</td>
-                       <td class="muted">${r.budget ? fen.compact(r.budget) : '—'}</td>
-                       <td>${r.over > 0 ? `<span class="tag-over">超 ${fen.compact(r.over)}</span>`
-                         : r.budget ? `<span class="tag-ok">剩 ${fen.compact(r.saved)}</span>` : '<span class="muted">—</span>'}</td>
+                       <td>${r.days}</td>
+                       <td>${r.daily == null ? '<span class="muted">—</span>' : fen.compact(r.daily)}</td>
                      </tr>`)).join('')}
               </tbody>
               <tfoot>
                 <tr>
                   <td>三餐合计</td>
                   <td>${fen.compact(ms.threeSum)}</td>
-                  <td>${ms.threeCount}</td>
-                  <td>${ms.threeAvg == null ? '—' : fen.compact(ms.threeAvg)}</td>
-                  <td>${fen.compact(ms.threeDaily)}</td>
-                  <td class="muted">—</td>
-                  <td class="muted">—</td>
+                  <td>${ms.threeDays}</td>
+                  <td>${ms.threeDaily == null ? '—' : fen.compact(ms.threeDaily)}</td>
                 </tr>
               </tfoot>
             </table>
@@ -635,7 +626,7 @@ export const statsView = {
             餐饮合计（含零食）${fen.yuan(ms.sum)} · 子预算 ${fen.compact(ms.budget)} ·
             ${ms.over > 0 ? `<span class="tag-over">超 ${fen.compact(ms.over)}</span>`
               : `<span class="tag-ok">剩 ${fen.compact(ms.budget - ms.sum)}</span>`}<br>
-            单均 = 月总额 ÷ 顿数；日均 = 月总额 ÷ 当月已过天数。
+            日均 = 月总额 ÷ 有记录天数。
           </p>
         </div>
 

@@ -435,21 +435,26 @@ export function budgetStatus(monthKey = d.monthKey()) {
   };
 }
 
-/** 三餐统计（PRD 10.2）：月总额 / 顿数 / 单均 / 日均 / 子预算 */
+/** 三餐统计（PRD 10.2）：月总额 / 有记录天数 / 日均 / 子预算 */
 export function mealStats(monthKey = d.monthKey()) {
   const elapsed = Math.max(d.daysElapsed(monthKey), 1);
+  const threeDates = new Set();
   const rows = MEALS.map((m) => {
     let sum = 0, count = 0;
+    const dates = new Set();
     for (const r of state.records) {
       if (!inMonth(r, monthKey) || r.type !== 'expense' || r.mealType !== m.id) continue;
       sum += r.amount;
       count += r.mealCount || 1;
+      const date = String(r.date).slice(0, 10);
+      dates.add(date);
+      if (m.id !== 'snack') threeDates.add(date);
     }
     const budget = state.budget.meals[m.id] || 0;
     return {
-      ...m, sum, count,
+      ...m, sum, count, days: dates.size,
       avg: count > 0 ? Math.round(sum / count) : null,
-      daily: Math.round(sum / elapsed),
+      daily: dates.size > 0 ? Math.round(sum / dates.size) : null,
       budget,
       over: budget > 0 ? Math.max(0, sum - budget) : 0,
       saved: budget > 0 ? Math.max(0, budget - sum) : 0,
@@ -463,6 +468,7 @@ export function mealStats(monthKey = d.monthKey()) {
   const three = rows.filter((r) => r.id !== 'snack');
   const threeSum = three.reduce((a, r) => a + r.sum, 0);
   const threeCount = three.reduce((a, r) => a + r.count, 0);
+  const threeDays = threeDates.size;
   return {
     rows,
     sum, count, budget,
@@ -471,7 +477,8 @@ export function mealStats(monthKey = d.monthKey()) {
     over: Math.max(0, sum - budget),
     threeSum, threeCount,
     threeAvg: threeCount > 0 ? Math.round(threeSum / threeCount) : null,
-    threeDaily: Math.round(threeSum / elapsed),
+    threeDays,
+    threeDaily: threeDays > 0 ? Math.round(threeSum / threeDays) : null,
   };
 }
 
