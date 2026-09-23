@@ -43,35 +43,21 @@ function applyTheme() {
 }
 applyTheme();
 
-/** 从最近 45 天的同类记录推导快捷模板，不新增数据结构。 */
-function quickTemplates() {
+/** 从最近 45 天的非空备注推导常用备注，不新增数据结构。 */
+function commonNotes() {
   const cutoff = Date.now() - 45 * 24 * 60 * 60 * 1000;
-  const groups = new Map();
+  const notes = new Map();
   for (const r of store.state.records) {
     const at = Date.parse(r.createdAt || `${r.date}T${r.time || '12:00'}:00`);
     if (!Number.isFinite(at) || at < cutoff) continue;
-    const key = [r.type, r.categoryId, r.mealType || '', r.accountId, (r.note || '').trim()].join('|');
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push({ r, at });
+    const note = (r.note || '').trim();
+    if (!note) continue;
+    const item = notes.get(note) || { note, count: 0, at: 0 };
+    item.count += 1;
+    item.at = Math.max(item.at, at);
+    notes.set(note, item);
   }
-  return [...groups.values()]
-    .map((items) => {
-      items.sort((a, b) => b.at - a.at);
-      const latest = items[0].r;
-      const counts = new Map();
-      for (const { r } of items) counts.set(r.amount, (counts.get(r.amount) || 0) + 1);
-      const amount = [...counts.entries()].sort((a, b) => b[1] - a[1] || b[0] - a[0])[0]?.[0] || latest.amount;
-      return {
-        type: latest.type,
-        amount,
-        categoryId: latest.categoryId,
-        mealType: latest.mealType || null,
-        accountId: latest.accountId || 'wechat',
-        note: (latest.note || '').trim(),
-        count: items.length,
-        at: items[0].at,
-      };
-    })
+  return [...notes.values()]
     .sort((a, b) => b.count - a.count || b.at - a.at)
     .slice(0, 6);
 }
@@ -112,7 +98,6 @@ export const recordView = {
     const amountText = rec.amount ? fen.format(fen.fromYuan(rec.amount)) : '0.00';
     const account = ACCOUNTS.find((a) => a.id === rec.accountId);
     const activeCat = catById(rec.categoryId);
-    const templates = quickTemplates();
 
     return `
       ${budgetStrip(st, dots)}
@@ -155,13 +140,6 @@ export const recordView = {
           <button class="meta-btn ${rec.note ? 'is-set' : ''}" type="button" data-meta="note">
             ${icon('pencil', 17)}<span>${rec.note ? esc(rec.note) : '备注'}</span>
           </button>
-        </div>
-        <div class="quick-bar">
-          <button class="quick-btn" type="button" data-quick ${templates.length ? '' : 'disabled'}
-                  aria-label="使用常用记录快捷带入">
-            ${icon('list', 17)}<span>常用</span>
-          </button>
-          <span class="quick-note">${templates.length ? '按你的近期记录推荐' : '记录几笔后自动出现'}</span>
         </div>
       </div>
 
@@ -231,9 +209,6 @@ export const recordView = {
         toast(`补记${mealById(fill)?.name || ''}`);
         return;
       }
-
-      const quick = e.target.closest('[data-quick]');
-      if (quick && !quick.disabled) { openQuick(root); return; }
 
       const meta = e.target.closest('[data-meta]')?.dataset.meta;
       if (meta) openMeta(meta, root);
@@ -307,14 +282,36 @@ function openMeta(kind, root) {
     });
   }
   if (kind === 'note') {
+    const notes = commonNotes();
     openSheet({
       title: '备注',
       body: `<label class="field"><span class="field-lab">写点什么</span>
         <input type="text" id="note-input" maxlength="50" placeholder="和室友聚餐" value="${esc(rec.note)}" />
-        <span class="hint">最多 50 字</span></label>`,
+        <span class="hint">最多 50 字</span></label>
+        ${notes.length ? `
+          <div class="note-presets">
+            <span class="field-lab">常用备注</span>
+            <div class="note-preset-list" role="group" aria-label="常用备注">
+              ${notes.map((item) => `
+                <button class="note-preset" type="button" data-common-note="${esc(item.note)}"
+                        aria-pressed="${rec.note === item.note}">${esc(item.note)}</button>`).join('')}
+            </div>
+          </div>` : ''}`,
       footer: `<button class="btn" type="button" data-ok>确定</button>`,
       onMount(el) {
         const input = el.querySelector('#note-input');
+        const presetButtons = [...el.querySelectorAll('[data-common-note]')];
+        const syncPresets = () => presetButtons.forEach((button) => {
+          button.setAttribute('aria-pressed', String(button.dataset.commonNote === input.value.trim()));
+        });
+        el.querySelector('.note-preset-list')?.addEventListener('click', (event) => {
+          const button = event.target.closest('[data-common-note]');
+          if (!button) return;
+          input.value = button.dataset.commonNote;
+          syncPresets();
+          input.focus();
+        });
+        input.addEventListener('input', syncPresets);
         el.querySelector('[data-ok]').addEventListener('click', () => {
           rec.note = input.value.trim();
           closeSheet(); rerenderRecord(root);
@@ -322,54 +319,6 @@ function openMeta(kind, root) {
       },
     });
   }
-}
-
-function openQuick(root) {
-  const templates = quickTemplates();
-  const body = templates.length
-    ? `<div class="list">${templates.map((t, i) => {
-      const c = catById(t.categoryId);
-      const m = mealById(t.mealType);
-      const label = t.note || (t.mealType ? `${c.name} · ${m?.name || ''}` : c.name);
-      return `
-        <button class="list-row quick-choice" type="button" data-template="${i}">
-          <span class="ledger-ic" style="--cat:${c.color}">${icon(c.icon, 17)}</span>
-          <span class="quick-copy">
-            <strong>${esc(label)}</strong>
-            <small>${t.type === 'income' ? '收入' : '支出'} · 近期 ${t.count} 次</small>
-          </span>
-          <span class="quick-amount">${fen.yuan(t.amount)}</span>
-        </button>`;
-    }).join('')}</div>
-    <p class="notes" style="margin-top:10px">只带入分类、金额、备注和账户；保存前仍可修改。</p>`
-    : '<p class="notes">还没有足够的同类记录。先记几笔，这里会自动出现常用项。</p>';
-
-  openSheet({
-    title: '常用记录',
-    body,
-    onMount(el) {
-      el.addEventListener('click', (e) => {
-        const btn = e.target.closest('[data-template]');
-        if (!btn) return;
-        const t = templates[Number(btn.dataset.template)];
-        if (!t) return;
-        Object.assign(rec, {
-          type: t.type,
-          amount: (t.amount / 100).toFixed(2),
-          categoryId: t.categoryId,
-          mealType: t.mealType,
-          mealTouched: !!t.mealType,
-          accountId: t.accountId,
-          note: t.note,
-          date: d.iso(),
-          time: nowHHMM(),
-        });
-        closeSheet();
-        rerenderRecord(root);
-        toast('已带入常用项，检查金额后保存');
-      });
-    },
-  });
 }
 
 function save(root) {

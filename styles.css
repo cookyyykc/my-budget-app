@@ -433,6 +433,7 @@ button { cursor: pointer; border: 0; background: none; padding: 0; }
   display: flex;
   align-items: center;
   gap: 6px;
+  min-height: 44px;
   padding: 10px var(--sp-3);
   border-radius: var(--r-sm);
   background: var(--surface-sunk);
@@ -444,31 +445,29 @@ button { cursor: pointer; border: 0; background: none; padding: 0; }
 .meta-btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .meta-btn.is-set { color: var(--ink); }
 
-.quick-bar {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  margin-top: var(--sp-3);
-}
-.quick-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  min-height: 38px;
-  padding: 8px 12px;
+.note-presets { margin-top: calc(var(--sp-4) * -1 + var(--sp-2)); margin-bottom: var(--sp-4); }
+.note-preset-list { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.note-preset {
+  min-height: 44px;
+  max-width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
   border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: var(--fs-sub);
+  overflow-wrap: anywhere;
+  transition: background .18s var(--ease-out), color .18s var(--ease-out), border-color .18s var(--ease-out);
+}
+.note-preset[aria-pressed="true"] {
+  border-color: var(--ink);
   background: var(--ink);
   color: var(--ink-inv);
-  font-size: var(--fs-sub);
-  font-weight: 650;
 }
-.quick-btn:disabled { opacity: .42; cursor: default; }
-.quick-note { color: var(--ink-3); font-size: var(--fs-micro); }
-.quick-choice { min-height: 62px; }
-.quick-choice .quick-copy { flex: 1; min-width: 0; }
-.quick-choice strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.quick-choice small { color: var(--ink-3); font-size: var(--fs-micro); }
-.quick-amount { font-family: var(--num); font-weight: 700; }
+.note-preset:focus-visible, .meta-btn:focus-visible, .chip:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
 
 .offline-badge {
   position: fixed;
@@ -544,6 +543,29 @@ html[data-online="false"] .offline-badge { display: block; }
 }
 .key--save:active { background: color-mix(in srgb, var(--ink) 88%, var(--paper)); }
 .key--save small { font-family: var(--num); font-size: 11px; font-weight: 500; opacity: .68; }
+
+/* 横屏时把键盘移到右侧，避免固定键盘遮住备注和时间。 */
+@media (orientation: landscape) and (max-height: 500px) {
+  .main.is-record {
+    padding-right: 296px;
+    padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+  }
+  .keypad {
+    left: auto;
+    right: 0;
+    top: 0;
+    bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+    width: 280px;
+    padding: var(--sp-3);
+    align-content: end;
+    border-top: 0;
+    border-left: 1px solid var(--line);
+  }
+  .scrim .sheet {
+    width: calc(100% - 296px);
+    max-height: 100vh;
+  }
+}
 
 .btn {
   display: inline-flex;
