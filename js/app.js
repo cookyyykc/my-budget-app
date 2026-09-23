@@ -28,9 +28,13 @@ function syncTabIndicator() {
   const active = tabbar.querySelector('.tab[aria-selected="true"]');
   const indicator = tabbar.querySelector('.tab-indicator');
   if (!active || !indicator) return;
-  indicator.style.width = `${active.offsetWidth}px`;
-  indicator.style.height = `${active.offsetHeight}px`;
-  indicator.style.transform = `translate3d(${active.offsetLeft}px, ${active.offsetTop}px, 0)`;
+  const barRect = tabbar.getBoundingClientRect();
+  const rect = active.getBoundingClientRect();
+  const x = rect.left - barRect.left - tabbar.clientLeft;
+  const y = rect.top - barRect.top - tabbar.clientTop;
+  indicator.style.width = `${rect.width}px`;
+  indicator.style.height = `${rect.height}px`;
+  indicator.style.transform = `translate3d(${x}px, ${y}px, 0)`;
 }
 
 function updateTabs() {
