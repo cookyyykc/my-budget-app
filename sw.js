@@ -1,5 +1,5 @@
 // 离线可用：把界面资源缓存起来，断网也能记账。
-const CACHE = 'ubudget-v13';
+const CACHE = 'ubudget-v14';
 const ASSETS = [
   './',
   './index.html',
@@ -41,7 +41,7 @@ async function networkFirst(request) {
   try {
     const timer = new Promise((_, reject) =>
       setTimeout(() => reject(new Error('network-timeout')), NETWORK_TIMEOUT_MS));
-    const res = await Promise.race([fetch(request), timer]);
+    const res = await Promise.race([fetch(request, { cache: 'reload' }), timer]);
     if (res && res.ok) {
       cache.put(request, res.clone()).catch(() => {});
     }

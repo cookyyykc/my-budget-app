@@ -151,6 +151,11 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     if (hadController) toast('已更新到新版本');
   });
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch((err) => console.warn('离线缓存未启用', err));
+    navigator.serviceWorker
+      .register('sw.js', { updateViaCache: 'none' })
+      .then(async (registration) => {
+        await registration.update();
+      })
+      .catch((err) => console.warn('离线缓存未启用', err));
   });
 }
