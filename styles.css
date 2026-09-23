@@ -519,7 +519,7 @@ html[data-online="false"] .offline-badge { display: block; }
   backdrop-filter: var(--dock-blur);
   -webkit-backdrop-filter: var(--dock-blur);
   border: 1px solid var(--dock-edge);
-  border-radius: var(--r-lg);
+  border-radius: var(--r-lg) var(--r-lg) 30px 30px;
   border-bottom: 1px solid var(--dock-edge);
   box-shadow:
     inset 0 1px 0 var(--dock-hi),
