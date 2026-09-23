@@ -72,10 +72,10 @@
   /* 底部玻璃底座：数字键盘与导航条共用同一套材质 */
   --dock-inset: 12px;
   --dock-gap: 8px;
-  --dock-bg: color-mix(in srgb, var(--paper-2) 88%, transparent);
+  --dock-bg: color-mix(in srgb, var(--paper-2) 94%, transparent);
   --dock-edge: color-mix(in srgb, var(--line-strong) 70%, transparent);
   --dock-hi: color-mix(in srgb, var(--surface) 55%, transparent);
-  --dock-blur: saturate(1.8) blur(24px);
+  --dock-blur: saturate(1.8) blur(28px);
   --dock-shadow: 0 14px 36px rgba(20, 24, 27, .16);
   --ease-spring: cubic-bezier(.22, 1.2, .36, 1);
   --ease-bounce: cubic-bezier(.34, 1.56, .64, 1);
