@@ -26,6 +26,56 @@ function bind(root, fn) {
 
 export function currentMonth() { return state.month; }
 
+const THEME_OPTIONS = [
+  { id: 'system', name: '跟随系统' },
+  { id: 'light',  name: '浅色' },
+  { id: 'dark',   name: '深色' },
+];
+
+function applyTheme() {
+  const theme = THEME_OPTIONS.some((t) => t.id === store.state.settings.theme)
+    ? store.state.settings.theme : 'system';
+  document.documentElement.dataset.theme = theme;
+  const dark = theme === 'dark' ||
+    (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.querySelectorAll('meta[name="theme-color"]')
+    .forEach((m) => { m.content = dark ? '#0E1113' : '#F4F5F1'; });
+}
+applyTheme();
+
+/** 从最近 45 天的同类记录推导快捷模板，不新增数据结构。 */
+function quickTemplates() {
+  const cutoff = Date.now() - 45 * 24 * 60 * 60 * 1000;
+  const groups = new Map();
+  for (const r of store.state.records) {
+    const at = Date.parse(r.createdAt || `${r.date}T${r.time || '12:00'}:00`);
+    if (!Number.isFinite(at) || at < cutoff) continue;
+    const key = [r.type, r.categoryId, r.mealType || '', r.accountId, (r.note || '').trim()].join('|');
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push({ r, at });
+  }
+  return [...groups.values()]
+    .map((items) => {
+      items.sort((a, b) => b.at - a.at);
+      const latest = items[0].r;
+      const counts = new Map();
+      for (const { r } of items) counts.set(r.amount, (counts.get(r.amount) || 0) + 1);
+      const amount = [...counts.entries()].sort((a, b) => b[1] - a[1] || b[0] - a[0])[0]?.[0] || latest.amount;
+      return {
+        type: latest.type,
+        amount,
+        categoryId: latest.categoryId,
+        mealType: latest.mealType || null,
+        accountId: latest.accountId || 'wechat',
+        note: (latest.note || '').trim(),
+        count: items.length,
+        at: items[0].at,
+      };
+    })
+    .sort((a, b) => b.count - a.count || b.at - a.at)
+    .slice(0, 6);
+}
+
 // ================================================================ 记账
 const rec = {
   type: 'expense',
@@ -62,6 +112,7 @@ export const recordView = {
     const amountText = rec.amount ? fen.format(fen.fromYuan(rec.amount)) : '0.00';
     const account = ACCOUNTS.find((a) => a.id === rec.accountId);
     const activeCat = catById(rec.categoryId);
+    const templates = quickTemplates();
 
     return `
       ${budgetStrip(st, dots)}
@@ -104,6 +155,13 @@ export const recordView = {
           <button class="meta-btn ${rec.note ? 'is-set' : ''}" type="button" data-meta="note">
             ${icon('pencil', 17)}<span>${rec.note ? esc(rec.note) : '备注'}</span>
           </button>
+        </div>
+        <div class="quick-bar">
+          <button class="quick-btn" type="button" data-quick ${templates.length ? '' : 'disabled'}
+                  aria-label="使用常用记录快捷带入">
+            ${icon('list', 17)}<span>常用</span>
+          </button>
+          <span class="quick-note">${templates.length ? '按你的近期记录推荐' : '记录几笔后自动出现'}</span>
         </div>
       </div>
 
@@ -173,6 +231,9 @@ export const recordView = {
         toast(`补记${mealById(fill)?.name || ''}`);
         return;
       }
+
+      const quick = e.target.closest('[data-quick]');
+      if (quick && !quick.disabled) { openQuick(root); return; }
 
       const meta = e.target.closest('[data-meta]')?.dataset.meta;
       if (meta) openMeta(meta, root);
@@ -261,6 +322,54 @@ function openMeta(kind, root) {
       },
     });
   }
+}
+
+function openQuick(root) {
+  const templates = quickTemplates();
+  const body = templates.length
+    ? `<div class="list">${templates.map((t, i) => {
+      const c = catById(t.categoryId);
+      const m = mealById(t.mealType);
+      const label = t.note || (t.mealType ? `${c.name} · ${m?.name || ''}` : c.name);
+      return `
+        <button class="list-row quick-choice" type="button" data-template="${i}">
+          <span class="ledger-ic" style="--cat:${c.color}">${icon(c.icon, 17)}</span>
+          <span class="quick-copy">
+            <strong>${esc(label)}</strong>
+            <small>${t.type === 'income' ? '收入' : '支出'} · 近期 ${t.count} 次</small>
+          </span>
+          <span class="quick-amount">${fen.yuan(t.amount)}</span>
+        </button>`;
+    }).join('')}</div>
+    <p class="notes" style="margin-top:10px">只带入分类、金额、备注和账户；保存前仍可修改。</p>`
+    : '<p class="notes">还没有足够的同类记录。先记几笔，这里会自动出现常用项。</p>';
+
+  openSheet({
+    title: '常用记录',
+    body,
+    onMount(el) {
+      el.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-template]');
+        if (!btn) return;
+        const t = templates[Number(btn.dataset.template)];
+        if (!t) return;
+        Object.assign(rec, {
+          type: t.type,
+          amount: (t.amount / 100).toFixed(2),
+          categoryId: t.categoryId,
+          mealType: t.mealType,
+          mealTouched: !!t.mealType,
+          accountId: t.accountId,
+          note: t.note,
+          date: d.iso(),
+          time: nowHHMM(),
+        });
+        closeSheet();
+        rerenderRecord(root);
+        toast('已带入常用项，检查金额后保存');
+      });
+    },
+  });
 }
 
 function save(root) {
@@ -804,6 +913,7 @@ export const meView = {
     const ms = mealStats();
     const os = otherStats();
     const mode = OVERSPEND_MODES.find((m) => m.id === b.overspendMode);
+    const theme = THEME_OPTIONS.find((t) => t.id === store.state.settings.theme) || THEME_OPTIONS[0];
     const catTotal = Object.values(b.category).reduce((a, v) => a + v, 0);
     // 三餐子预算只管早/午/晚 —— 零食不设子预算，只统计合计
     const mealTotal = MEALS.filter((m) => m.id !== 'snack')
@@ -867,6 +977,17 @@ export const meView = {
         </div>
 
         <div class="section">
+          <div class="section-head"><h2>外观</h2><span class="hint">可强制浅色或深色</span></div>
+          <div class="list">
+            <button class="list-row" type="button" data-set="theme">
+              <span class="list-lab">主题模式</span>
+              <span class="list-val">${theme.name}</span>
+              <span class="list-chev">${icon('chevron', 16)}</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="section">
           <div class="section-head"><h2>数据</h2><span class="hint">只存在这台设备</span></div>
           <div class="list">
             <button class="list-row" type="button" data-act="backup">
@@ -917,10 +1038,9 @@ export const meView = {
           <div class="section-head"><h2>口径说明</h2></div>
           <div class="card">
             <div class="notes">
-              <p><b>日均 / 单均</b>：日均 = 该分类月总额 ÷ 当月已过天数；单均 = 三餐月总额 ÷ 顿数。</p>
+              <p><b>日均</b>：分类日均 = 分类月总额 ÷ 当月已过天数；三餐日均 = 三餐合计 ÷ 有记录天数。</p>
               <p><b>三餐合计</b>：只算早餐 + 午餐 + 晚餐；<b>零食</b>单列一行，不算在三餐里，只统计合计。</p>
               <p><b>餐饮合计</b>：三餐 + 零食，等于「餐饮」分类支出，在统计页表格下方跟餐饮子预算对账。</p>
-              <p><b>顿数</b>：按记录的餐次笔数累计，合并记账时按标记的顿数计。</p>
               <p><b>预算</b>：分类子预算之和可以小于总预算，差额算未分配额度。</p>
               <p><b>金额</b>：全程以「分」为单位整数计算，不会出现浮点误差。</p>
               <p><b>数据存储</b>：只存在这台设备的浏览器里，不上传任何服务器。</p>
@@ -1012,6 +1132,28 @@ function restoreFromFile(root) {
 
 function openSetting(kind, root) {
   const b = store.state.budget;
+
+  if (kind === 'theme') {
+    openSheet({
+      title: '外观',
+      body: `<div class="list">${THEME_OPTIONS.map((t) => `
+        <button class="list-row" type="button" data-theme-choice="${t.id}">
+          <span class="list-lab">${t.name}</span>
+          ${store.state.settings.theme === t.id ? icon('check', 18) : ''}
+        </button>`).join('')}</div>`,
+      onMount(el) {
+        el.addEventListener('click', (e) => {
+          const choice = e.target.closest('[data-theme-choice]')?.dataset.themeChoice;
+          if (!choice) return;
+          store.setSetting({ theme: choice });
+          applyTheme();
+          closeSheet();
+          rerender(root);
+          toast('已更新外观');
+        });
+      },
+    });
+  }
 
   if (kind === 'total') {
     openSheet({

@@ -74,7 +74,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --paper:        #0E1113;
     --paper-2:      #171B1D;
     --surface:      #212629;
@@ -101,6 +101,34 @@
     --c-income:    #57B189;
   }
 }
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --paper:        #0E1113;
+  --paper-2:      #171B1D;
+  --surface:      #212629;
+  --surface-sunk: #15191B;
+  --ink:    #F1F3EF;
+  --ink-2:  #A2A9A5;
+  --ink-3:  #757C79;
+  --ink-inv:#0F1214;
+  --line:        #2A2F31;
+  --line-strong: #3A4042;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, .5);
+  --shadow-2: 0 -1px 0 var(--line), 0 -18px 40px rgba(0, 0, 0, .5);
+  --safe:  #57B189;
+  --warn:  #C9A13C;
+  --alert: #E07A3E;
+  --over:  #E1564A;
+  --c-food:      #C77F4C;
+  --c-life:      #6E90A1;
+  --c-study:     #9184B4;
+  --c-transport: #5E9488;
+  --c-fun:       #C06C80;
+  --c-reserve:   #9C9184;
+  --c-other:     #9BA19D;
+  --c-income:    #57B189;
+}
+html[data-theme="light"] { color-scheme: light; }
 
 * { box-sizing: border-box; }
 
@@ -415,6 +443,49 @@ button { cursor: pointer; border: 0; background: none; padding: 0; }
 }
 .meta-btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .meta-btn.is-set { color: var(--ink); }
+
+.quick-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-3);
+}
+.quick-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 8px 12px;
+  border-radius: var(--r-pill);
+  background: var(--ink);
+  color: var(--ink-inv);
+  font-size: var(--fs-sub);
+  font-weight: 650;
+}
+.quick-btn:disabled { opacity: .42; cursor: default; }
+.quick-note { color: var(--ink-3); font-size: var(--fs-micro); }
+.quick-choice { min-height: 62px; }
+.quick-choice .quick-copy { flex: 1; min-width: 0; }
+.quick-choice strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.quick-choice small { color: var(--ink-3); font-size: var(--fs-micro); }
+.quick-amount { font-family: var(--num); font-weight: 700; }
+
+.offline-badge {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 10px);
+  right: 10px;
+  z-index: 45;
+  display: none;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--ink-2);
+  box-shadow: var(--shadow-1);
+  font-size: var(--fs-micro);
+  font-weight: 650;
+}
+html[data-online="false"] .offline-badge { display: block; }
 
 /* 键盘 */
 .keypad {

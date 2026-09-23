@@ -82,6 +82,16 @@ document.addEventListener('keydown', (e) => {
 
 render();
 
+// 离线不是错误：账本仍可使用，但要把状态说清楚。
+function syncOnlineState(showToast = false) {
+  const online = navigator.onLine;
+  document.documentElement.dataset.online = String(online);
+  if (showToast) toast(online ? '网络已恢复' : '当前离线，仍可继续记账');
+}
+window.addEventListener('online', () => syncOnlineState(true));
+window.addEventListener('offline', () => syncOnlineState(true));
+syncOnlineState(false);
+
 // 便于排障和自动化测试：控制台里可以直接查看账本
 window.__store = store;
 

@@ -70,7 +70,7 @@ function emptyState() {
     version: 1,
     records: [],
     budget: structuredClone(DEFAULT_BUDGET),
-    settings: { defaultAccountId: 'wechat', seeded: false },
+    settings: { defaultAccountId: 'wechat', seeded: false, theme: 'system' },
   };
 }
 
@@ -181,7 +181,7 @@ function parseState(raw) {
   const parsed = JSON.parse(raw);
   if (!parsed || !Array.isArray(parsed.records)) throw new Error('账本结构不对');
   parsed.budget = { ...structuredClone(DEFAULT_BUDGET), ...parsed.budget };
-  parsed.settings = { defaultAccountId: 'wechat', seeded: false, ...parsed.settings };
+  parsed.settings = { defaultAccountId: 'wechat', seeded: false, theme: 'system', ...parsed.settings };
   return parsed;
 }
 
