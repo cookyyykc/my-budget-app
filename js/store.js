@@ -75,7 +75,7 @@ function emptyState() {
 }
 
 // ---------------------------------------------------------------- 历史记录
-// 来自用户 9/13–9/19 的流水笔记。
+// 来自用户 9/13–9/23 的流水记录。
 // 解析口径：「吃饭 6.5+13+10」三个数字＝早餐+午餐+晚餐；
 //          「吃饭 14+13」两个数字＝午餐+晚餐（早餐都在 6–8.5，两位数不可能是早餐）。
 const HISTORY_MONTH = '2026-09';
@@ -128,6 +128,16 @@ const HISTORY = [
   { day: 21, cat: 'food',  meal: 'lunch',     yuan: 14,   note: '' },
   { day: 21, cat: 'food',  meal: 'snack',     yuan: 10,   note: '水果' },
   { day: 21, cat: 'food',  meal: 'snack',     yuan: 3.5,  note: '饮料' },
+  { day: 21, cat: 'food',  meal: 'dinner',    yuan: 14,   note: '', time: '17:45' },
+  { day: 21, cat: 'other',                    yuan: 12.5, note: '电费', time: '20:26' },
+  // 9/22　早餐 4　午餐 13　体检费 90　晚餐 9.8
+  { day: 22, cat: 'food',  meal: 'breakfast', yuan: 4,    note: '', time: '11:23' },
+  { day: 22, cat: 'food',  meal: 'lunch',     yuan: 13,   note: '', time: '11:23' },
+  { day: 22, cat: 'other',                    yuan: 90,   note: '体检费', time: '12:00' },
+  { day: 22, cat: 'food',  meal: 'dinner',    yuan: 9.8,  note: '', time: '16:23' },
+  // 9/23　早餐 4.5　午餐 14
+  { day: 23, cat: 'food',  meal: 'breakfast', yuan: 4.5,  note: '', time: '08:55' },
+  { day: 23, cat: 'food',  meal: 'lunch',     yuan: 14,   note: '', time: '10:47' },
 ];
 
 function buildHistory() {

@@ -832,7 +832,7 @@ export const meView = {
 
         ${store.isSeeded() ? `<div class="banner">
           ${icon('dots', 16)}
-          <span>账本里是<b>你 9/13–9/21 的真实记录</b>（从笔记导入）。之后每天记新的就行，不用再管这份历史。</span>
+          <span>账本里是<b>你 9/13–9/23 的真实记录</b>（从笔记导入）。之后每天记新的就行，不用再管这份历史。</span>
         </div>` : ''}
 
         <div class="section">
@@ -945,7 +945,7 @@ export const meView = {
       if (set) { openSetting(set, root); return; }
       const act = e.target.closest('[data-act]')?.dataset.act;
       if (act === 'export') exportCSV();
-      if (act === 'demo') { store.loadHistory(); toast('已载入 9/13–9/19 的记录'); rerender(root); }
+      if (act === 'demo') { store.loadHistory(); toast('已载入 9/13–9/23 的记录'); rerender(root); }
       if (act === 'clear') clearAll(root);
       if (act === 'backup') backupFile();
       if (act === 'restore') restoreFromFile(root);
