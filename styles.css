@@ -975,8 +975,27 @@ table.data tfoot tr + tr td { border-top: 1px solid var(--line); padding-top: va
     var(--dock-shadow);
   isolation: isolate;
 }
+.tab-indicator {
+  position: absolute;
+  top: 5px;
+  left: 0;
+  z-index: 0;
+  border-radius: var(--r-pill);
+  background: rgba(46, 125, 91, .16);
+  background: color-mix(in srgb, var(--safe) 16%, var(--surface));
+  border: 1px solid rgba(46, 125, 91, .34);
+  border-color: color-mix(in srgb, var(--safe) 34%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--surface) 70%, transparent),
+    0 8px 24px rgba(46, 125, 91, .12);
+  pointer-events: none;
+  transform: translate3d(0, 0, 0);
+  transition: transform .48s var(--ease-bounce), opacity .18s var(--ease-out);
+  will-change: transform;
+}
 .tab {
   position: relative;
+  z-index: 1;
   min-width: 0;
   min-height: 50px;
   display: flex;
@@ -991,39 +1010,26 @@ table.data tfoot tr + tr td { border-top: 1px solid var(--line); padding-top: va
   transition: color .2s var(--ease-out), transform .18s var(--ease-bounce);
   -webkit-tap-highlight-color: transparent;
 }
-.tab::before {
-  content: "";
-  position: absolute;
-  inset: 3px;
-  z-index: -1;
-  border-radius: inherit;
-  background: color-mix(in srgb, var(--safe) 16%, var(--surface));
-  border: 1px solid color-mix(in srgb, var(--safe) 34%, transparent);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--surface) 70%, transparent);
-  opacity: 0;
-  transform: scale(.72);
-  transition: opacity .2s var(--ease-out), transform .42s var(--ease-bounce);
-}
 .tab svg,
 .tab span {
   position: relative;
   z-index: 1;
+  will-change: transform;
   transition: transform .42s var(--ease-bounce);
 }
 .tab span { font-size: clamp(12px, 1em, 16px); line-height: 1.15; }
 .tab:active { transform: scale(.94); }
 .tab[aria-selected="true"] { color: var(--safe); }
-.tab[aria-selected="true"]::before {
-  opacity: 1;
-  transform: scale(1);
-  animation: tab-bounce .48s var(--ease-bounce);
+.tab[aria-selected="true"] svg {
+  transform: translateY(-2px) scale(1.08);
+  animation: tab-icon-bounce .52s var(--ease-bounce);
 }
-.tab[aria-selected="true"] svg { transform: translateY(-2px) scale(1.08); }
 .tab[aria-selected="true"] span { transform: translateY(1px); }
-@keyframes tab-bounce {
-  0% { transform: scale(.74) translateY(7px); }
-  62% { transform: scale(1.06) translateY(-2px); }
-  100% { transform: scale(1) translateY(0); }
+@keyframes tab-icon-bounce {
+  0% { transform: translateY(3px) scale(.9); }
+  52% { transform: translateY(-4px) scale(1.14); }
+  78% { transform: translateY(-1px) scale(1.03); }
+  100% { transform: translateY(-2px) scale(1.08); }
 }
 
 /* ============================================================

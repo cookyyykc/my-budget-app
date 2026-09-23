@@ -14,9 +14,9 @@ const tabbar = document.getElementById('tabbar');
 
 let current = TABS[0];
 
-function renderTabs() {
+function mountTabs() {
   tabbar.setAttribute('role', 'tablist');
-  tabbar.innerHTML = TABS.map((t) => `
+  tabbar.innerHTML = `<span class="tab-indicator" aria-hidden="true"></span>` + TABS.map((t) => `
     <button class="tab" type="button" role="tab" data-tab="${t.id}"
             aria-selected="${current.id === t.id}" aria-controls="main">
       ${icon(t.icon, 23)}
@@ -24,12 +24,28 @@ function renderTabs() {
     </button>`).join('');
 }
 
+function syncTabIndicator() {
+  const active = tabbar.querySelector('.tab[aria-selected="true"]');
+  const indicator = tabbar.querySelector('.tab-indicator');
+  if (!active || !indicator) return;
+  indicator.style.width = `${active.offsetWidth}px`;
+  indicator.style.height = `${active.offsetHeight}px`;
+  indicator.style.transform = `translate3d(${active.offsetLeft}px, ${active.offsetTop}px, 0)`;
+}
+
+function updateTabs() {
+  tabbar.querySelectorAll('.tab').forEach((tab) => {
+    tab.setAttribute('aria-selected', String(tab.dataset.tab === current.id));
+  });
+  requestAnimationFrame(syncTabIndicator);
+}
+
 function render() {
   setActiveView(current.view);
   main.classList.toggle('is-record', current.id === 'record');
   main.innerHTML = current.view.html();
   current.view.mount(main);
-  renderTabs();
+  updateTabs();
   window.scrollTo(0, 0);
 }
 
@@ -80,7 +96,9 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+mountTabs();
 render();
+window.addEventListener('resize', syncTabIndicator);
 
 // 离线不是错误：账本仍可使用，但要把状态说清楚。
 function syncOnlineState(showToast = false) {
