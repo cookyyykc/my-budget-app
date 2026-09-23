@@ -656,6 +656,7 @@ export const statsView = {
     const t = totals(mk);
     const st = budgetStatus(mk);
     const ms = mealStats(mk);
+    const isCurrentMonth = mk === d.monthKey();
     const os = otherStats(mk);
     const osRows = os.rows.filter((r) => r.sum > 0);
     const reasons = overspendReasons(mk);
@@ -729,6 +730,19 @@ export const statsView = {
                 </tr>
               </tfoot>
             </table>
+          </div>
+          <div class="forecast" aria-label="${isCurrentMonth ? '预计本月三餐' : '预计该月三餐'}">
+            <div class="forecast-copy">
+              <div class="forecast-label">${isCurrentMonth ? '预计本月三餐' : '预计该月三餐'}</div>
+              <div class="forecast-note">${
+                ms.threeDaily == null
+                  ? '有三餐记录后自动估算'
+                  : `按三餐日均 ${fen.yuan(ms.threeDaily)} × ${ms.threeProjectionDays} 天估算 · 不含零食`
+              }</div>
+            </div>
+            <div class="forecast-value">${
+              ms.threeProjection == null ? '<span class="muted">—</span>' : fen.compact(ms.threeProjection)
+            }</div>
           </div>
           <p class="notes" style="margin-top:10px">
             <b>三餐合计 = 早餐 + 午餐 + 晚餐</b>；零食单列，不计入三餐。<br>
@@ -1039,6 +1053,7 @@ export const meView = {
           <div class="card">
             <div class="notes">
               <p><b>日均</b>：分类日均 = 分类月总额 ÷ 当月已过天数；三餐日均 = 三餐合计 ÷ 有记录天数。</p>
+              <p><b>预计</b>：预计三餐 = 三餐日均 × 当月天数，不含零食。</p>
               <p><b>三餐合计</b>：只算早餐 + 午餐 + 晚餐；<b>零食</b>单列一行，不算在三餐里，只统计合计。</p>
               <p><b>餐饮合计</b>：三餐 + 零食，等于「餐饮」分类支出，在统计页表格下方跟餐饮子预算对账。</p>
               <p><b>预算</b>：分类子预算之和可以小于总预算，差额算未分配额度。</p>

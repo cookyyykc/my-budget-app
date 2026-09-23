@@ -795,6 +795,29 @@ table.data tfoot tr + tr td { border-top: 1px solid var(--line); padding-top: va
 
 .table-wrap { background: var(--surface); border-radius: var(--r-md); box-shadow: var(--shadow-1); overflow: hidden; }
 
+.forecast {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-3);
+  padding: var(--sp-4);
+  background: color-mix(in srgb, var(--c-food) 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--c-food) 22%, var(--line));
+  border-radius: var(--r-md);
+}
+.forecast-copy { min-width: 0; }
+.forecast-label { font-size: var(--fs-sub); font-weight: 650; color: var(--ink); }
+.forecast-note { margin-top: var(--sp-1); font-size: var(--fs-micro); color: var(--ink-2); line-height: 1.45; }
+.forecast-value {
+  font-family: var(--num);
+  font-size: 20px;
+  font-weight: 680;
+  color: var(--ink);
+  letter-spacing: -.01em;
+  white-space: nowrap;
+}
+
 /* 横条对比（三餐） */
 .hbars { display: grid; gap: var(--sp-3); }
 .hbar-row { display: grid; grid-template-columns: 62px 1fr auto; align-items: center; gap: var(--sp-3); }

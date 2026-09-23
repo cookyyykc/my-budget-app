@@ -469,6 +469,11 @@ export function mealStats(monthKey = d.monthKey()) {
   const threeSum = three.reduce((a, r) => a + r.sum, 0);
   const threeCount = three.reduce((a, r) => a + r.count, 0);
   const threeDays = threeDates.size;
+  const threeDaily = threeDays > 0 ? Math.round(threeSum / threeDays) : null;
+  const threeProjectionDays = d.daysInMonth(monthKey);
+  const threeProjection = threeDaily == null
+    ? null
+    : Math.round(threeDaily * threeProjectionDays);
   return {
     rows,
     sum, count, budget,
@@ -478,7 +483,9 @@ export function mealStats(monthKey = d.monthKey()) {
     threeSum, threeCount,
     threeAvg: threeCount > 0 ? Math.round(threeSum / threeCount) : null,
     threeDays,
-    threeDaily: threeDays > 0 ? Math.round(threeSum / threeDays) : null,
+    threeDaily,
+    threeProjection,
+    threeProjectionDays,
   };
 }
 
