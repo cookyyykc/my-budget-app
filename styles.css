@@ -975,97 +975,23 @@ table.data tfoot tr + tr td { border-top: 1px solid var(--line); padding-top: va
     var(--dock-shadow);
   isolation: isolate;
 }
-.water-bubble {
+.tab-indicator {
   position: absolute;
   top: 0;
   left: 0;
   z-index: 0;
   border-radius: var(--r-pill);
-  background:
-    radial-gradient(120% 170% at 26% 18%, rgba(255, 255, 255, .62), transparent 42%),
-    radial-gradient(130% 190% at 72% 98%, color-mix(in srgb, var(--safe) 22%, transparent), transparent 58%),
-    color-mix(in srgb, var(--safe) 16%, var(--surface));
-  border: 1px solid color-mix(in srgb, var(--safe) 30%, rgba(255, 255, 255, .42));
+  background: rgba(46, 125, 91, .16);
+  background: color-mix(in srgb, var(--safe) 16%, var(--surface));
+  border: 1px solid rgba(46, 125, 91, .34);
+  border-color: color-mix(in srgb, var(--safe) 34%, transparent);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .52),
-    inset 0 -9px 16px color-mix(in srgb, var(--safe) 24%, transparent),
-    0 10px 22px color-mix(in srgb, var(--safe) 16%, transparent);
-  backdrop-filter: blur(8px) saturate(1.45);
-  -webkit-backdrop-filter: blur(8px) saturate(1.45);
+    inset 0 1px 0 color-mix(in srgb, var(--surface) 70%, transparent),
+    0 8px 24px rgba(46, 125, 91, .12);
   pointer-events: none;
   transform: translate3d(0, 0, 0);
-  transition: transform .52s var(--ease-bounce), opacity .18s var(--ease-out);
+  transition: transform .48s var(--ease-bounce), opacity .18s var(--ease-out);
   will-change: transform;
-}
-.water-bubble > i {
-  position: absolute;
-  display: block;
-  pointer-events: none;
-}
-.bubble-tail {
-  left: 50%;
-  top: 42%;
-  width: 132%;
-  height: 70%;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--safe) 26%, transparent), transparent 68%);
-  filter: blur(7px);
-  opacity: 0;
-  transform: translate(-50%, -50%) translateX(calc(var(--move-x, 0px) * -.35)) scaleX(.25);
-  transition: transform .52s var(--ease-bounce), opacity .18s var(--ease-out);
-}
-.water-bubble.is-moving .bubble-tail {
-  opacity: .6;
-  transform: translate(-50%, -50%) translateX(calc(var(--move-x, 0px) * -.26)) scaleX(1.12);
-}
-.bubble-ripple {
-  inset: -7px;
-  border: 1px solid color-mix(in srgb, var(--safe) 40%, transparent);
-  border-radius: inherit;
-  opacity: 0;
-  transform: scale(.78);
-}
-.water-bubble.is-rippling .bubble-ripple {
-  animation: bubble-ripple .58s cubic-bezier(.2, .8, .2, 1);
-}
-.bubble-glow {
-  inset: 0;
-  border-radius: inherit;
-  background:
-    radial-gradient(120% 180% at 26% 18%, rgba(255, 255, 255, .42), transparent 46%),
-    radial-gradient(130% 190% at 72% 98%, color-mix(in srgb, var(--safe) 24%, transparent), transparent 56%);
-  animation: bubble-breathe 4.4s ease-in-out infinite;
-}
-.bubble-highlight {
-  left: 12%;
-  top: 10%;
-  width: 34%;
-  height: 42%;
-  border-radius: 50%;
-  background: linear-gradient(135deg, rgba(255,255,255,.92), rgba(255,255,255,.12));
-  filter: blur(.35px);
-  transform: translate(calc(var(--move-x, 0px) * .05), calc(var(--move-y, 0px) * .05));
-  transition: transform .42s var(--ease-bounce);
-}
-.bubble-shine {
-  left: 24%;
-  top: 20%;
-  width: 8%;
-  height: 12%;
-  border-radius: 50%;
-  background: #fff;
-  opacity: .92;
-  filter: blur(.2px);
-  transform: translate(calc(var(--move-x, 0px) * .08), calc(var(--move-y, 0px) * .08));
-  transition: transform .42s var(--ease-bounce);
-}
-@keyframes bubble-ripple {
-  0% { opacity: .55; transform: scale(.78); }
-  100% { opacity: 0; transform: scale(1.68); }
-}
-@keyframes bubble-breathe {
-  0%, 100% { opacity: .82; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.035); }
 }
 .tab {
   position: relative;
