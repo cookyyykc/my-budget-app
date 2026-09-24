@@ -1053,12 +1053,29 @@ table.data tfoot tr + tr td { border-top: 1px solid var(--line); padding-top: va
   overflow: auto;
   background: var(--paper);
   border-radius: var(--r-lg) var(--r-lg) 0 0;
-  padding: var(--sp-4) var(--sp-4) calc(var(--sp-5) + env(safe-area-inset-bottom));
+  padding: var(--sp-2) var(--sp-4) calc(var(--sp-5) + env(safe-area-inset-bottom));
   transform: translateY(12px);
   transition: transform .3s var(--ease-spring);
   box-shadow: var(--shadow-2);
 }
 .scrim.is-open .sheet { transform: translateY(0); }
+.sheet.is-dragging { transition: none; will-change: transform; }
+.sheet.is-settling { transition: transform .3s var(--ease-spring); }
+.sheet-drag-zone {
+  display: flex;
+  justify-content: center;
+  padding: 7px 0 9px;
+  margin: 0 calc(var(--sp-4) * -1);
+  touch-action: none;
+  cursor: grab;
+}
+.sheet-handle {
+  width: 38px;
+  height: 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 17%, transparent);
+}
+.sheet-drag-zone:active { cursor: grabbing; }
 .sheet-head {
   display: flex;
   align-items: center;
@@ -1157,6 +1174,20 @@ table.data tfoot tr + tr td { border-top: 1px solid var(--line); padding-top: va
 /* 切页进场：全 App 唯一一处编排动效 */
 .screen {
   animation: enter .34s var(--ease-spring) both;
+}
+main.is-transitioning { pointer-events: none; }
+
+.cat, .chip, .meta-btn, .note-preset, .fchip, .btn, .key {
+  transition: transform .16s var(--ease-out), background-color .18s var(--ease-out);
+}
+.cat:active, .chip:active, .meta-btn:active, .note-preset:active, .fchip:active {
+  transform: scale(.975);
+}
+.ledger-row, .list-row, table.data tbody tr {
+  transition: transform .16s var(--ease-out), background-color .16s var(--ease-out);
+}
+.ledger-row:active, .list-row:active, table.data tbody tr:active {
+  transform: scale(.997);
 }
 @keyframes enter {
   from { opacity: 0; transform: translateY(6px); }

@@ -69,6 +69,72 @@ export function closeSheet() {
 let lastFocus = null;
 function onSheetKey(e) { if (e.key === 'Escape') closeSheet(); }
 
+function bindSheetDrag(scrim, sheet) {
+  const zone = sheet.querySelector('.sheet-drag-zone');
+  let active = false;
+  let dragging = false;
+  let startY = 0;
+  let lastY = 0;
+  let lastTime = 0;
+  let velocity = 0;
+
+  zone.addEventListener('pointerdown', (event) => {
+    if (event.button || !scrim.classList.contains('is-open')) return;
+    active = true;
+    dragging = false;
+    startY = lastY = event.clientY;
+    lastTime = performance.now();
+    velocity = 0;
+    zone.setPointerCapture(event.pointerId);
+  });
+
+  zone.addEventListener('pointermove', (event) => {
+    if (!active) return;
+    const dy = event.clientY - startY;
+    if (!dragging && Math.abs(dy) < 7) return;
+    if (!dragging) {
+      dragging = true;
+      sheet.classList.add('is-dragging');
+      scrim.style.setProperty('--drag-progress', '0');
+    }
+    const offset = Math.max(0, dy);
+    const progress = Math.min(1, offset / Math.max(120, sheet.offsetHeight * .35));
+    sheet.style.transform = `translate3d(0, ${offset}px, 0)`;
+    scrim.style.background = `rgba(10, 12, 13, ${(1 - progress) * .38})`;
+    velocity = (event.clientY - lastY) / Math.max(1, performance.now() - lastTime);
+    lastY = event.clientY;
+    lastTime = performance.now();
+  });
+
+  const release = (event) => {
+    if (!active) return;
+    active = false;
+    zone.releasePointerCapture?.(event.pointerId);
+    if (!dragging) return;
+    dragging = false;
+    sheet.classList.remove('is-dragging');
+    const offset = sheet.getBoundingClientRect().top - sheet.parentElement.getBoundingClientRect().top;
+    const shouldClose = offset > 88 || velocity > .52;
+    if (shouldClose) {
+      sheet.classList.add('is-settling');
+      sheet.style.transform = 'translate3d(0, 110%, 0)';
+      scrim.style.background = '';
+      setTimeout(closeSheet, 190);
+    } else {
+      sheet.classList.add('is-settling');
+      sheet.style.transform = 'translate3d(0, 0, 0)';
+      scrim.style.background = '';
+      setTimeout(() => {
+        sheet.classList.remove('is-settling');
+        sheet.style.transform = '';
+      }, 320);
+    }
+  };
+
+  zone.addEventListener('pointerup', release);
+  zone.addEventListener('pointercancel', release);
+}
+
 export function openSheet({ title, body, footer = '', onMount }) {
   closeSheet();
   lastFocus = document.activeElement;
@@ -77,6 +143,7 @@ export function openSheet({ title, body, footer = '', onMount }) {
   scrim.className = 'scrim';
   scrim.innerHTML = `
     <div class="sheet" role="dialog" aria-modal="true" aria-label="${title}">
+      <div class="sheet-drag-zone" aria-hidden="true"><span class="sheet-handle"></span></div>
       <div class="sheet-head">
         <h2>${title}</h2>
         <button class="sheet-close" type="button" data-close aria-label="关闭">${icon('close', 20)}</button>
@@ -96,6 +163,7 @@ export function openSheet({ title, body, footer = '', onMount }) {
   scrimEl = scrim;
   requestAnimationFrame(() => scrim.classList.add('is-open'));
   scrim.querySelector('[data-close]')?.focus();
+  bindSheetDrag(scrim, scrim.querySelector('.sheet'));
   onMount?.(scrim);
   return scrim;
 }

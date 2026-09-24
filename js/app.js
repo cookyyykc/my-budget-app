@@ -98,12 +98,22 @@ function animateTabChange(previousTab) {
 }
 
 function render({ animate = false, previousTab = null } = {}) {
-  setActiveView(current.view);
-  main.classList.toggle('is-record', current.id === 'record');
-  main.innerHTML = current.view.html();
-  current.view.mount(main);
-  updateTabs({ animate, previousTab });
-  window.scrollTo(0, 0);
+  const apply = () => {
+    setActiveView(current.view);
+    main.classList.toggle('is-record', current.id === 'record');
+    main.innerHTML = current.view.html();
+    current.view.mount(main);
+    updateTabs({ animate, previousTab });
+    window.scrollTo(0, 0);
+  };
+  if (animate && document.startViewTransition) {
+    main.classList.add('is-transitioning');
+    document.startViewTransition(apply).finished.finally(() => {
+      main.classList.remove('is-transitioning');
+    });
+  } else {
+    apply();
+  }
 }
 
 tabbar.addEventListener('click', (e) => {
@@ -129,11 +139,15 @@ document.addEventListener('click', (e) => {
   const delta = e.target.closest('[data-month]')?.dataset.month;
   if (!delta) return;
   gotoMonth(Number(delta));
-  setActiveView(current.view);
   const y = window.scrollY;
-  main.innerHTML = current.view.html();
-  current.view.mount(main);
-  window.scrollTo(0, y);
+  const apply = () => {
+    setActiveView(current.view);
+    main.innerHTML = current.view.html();
+    current.view.mount(main);
+    window.scrollTo(0, y);
+  };
+  if (document.startViewTransition) document.startViewTransition(apply);
+  else apply();
 });
 
 // 物理键盘：在记账页也能直接敲数字
