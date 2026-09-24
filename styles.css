@@ -213,7 +213,7 @@ button { cursor: pointer; border: 0; background: none; padding: 0; min-height: 4
   outline: none;
 }
 .main.is-record {
-  padding-bottom: calc(var(--tabbar-h) + var(--keypad-h) + env(safe-area-inset-bottom));
+  padding-bottom: calc(var(--tabbar-h) + var(--keypad-h) + 16px + env(safe-area-inset-bottom));
 }
 
 .screen { padding: 0 var(--sp-4) var(--sp-6); }
