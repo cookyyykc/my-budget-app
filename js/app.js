@@ -34,16 +34,16 @@ function mountTabs() {
     </button>`).join('');
 }
 
-function bubbleCenter(tab) {
-  const active = tabbar.querySelector('.tab[aria-selected="true"]');
+function bubbleTarget(tab) {
   const bubble = tabbar.querySelector('.water-bubble');
-  const tabIcon = tab?.querySelector('svg');
-  if (!active || !bubble || !tabIcon) return null;
+  if (!tab || !bubble) return null;
   const barRect = tabbar.getBoundingClientRect();
-  const iconRect = tabIcon.getBoundingClientRect();
+  const rect = tab.getBoundingClientRect();
   return {
-    x: iconRect.left + iconRect.width / 2 - barRect.left - tabbar.clientLeft - bubble.offsetWidth / 2,
-    y: iconRect.top + iconRect.height / 2 - barRect.top - tabbar.clientTop - bubble.offsetHeight / 2
+    x: rect.left - barRect.left - tabbar.clientLeft,
+    y: rect.top - barRect.top - tabbar.clientTop,
+    width: rect.width,
+    height: rect.height
   };
 }
 
@@ -60,12 +60,14 @@ function updateTabs({ animate = false, previousTab = null } = {}) {
 function positionBubble(active, { hoverTarget = null, animate = false, previousTab = null } = {}) {
   const bubble = tabbar.querySelector('.water-bubble');
   if (!active || !bubble) return;
-  const target = bubbleCenter(active);
+  const target = bubbleTarget(active);
   if (!target) return;
+  bubble.style.width = `${target.width}px`;
+  bubble.style.height = `${target.height}px`;
   let { x, y } = target;
 
   if (hoverTarget && hoverTarget !== active && !prefersReducedMotion()) {
-    const hovered = bubbleCenter(hoverTarget);
+    const hovered = bubbleTarget(hoverTarget);
     if (hovered) {
       const pull = Math.max(-6, Math.min(6, (hovered.x - x) * .12));
       x += pull;

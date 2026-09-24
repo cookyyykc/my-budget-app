@@ -980,13 +980,11 @@ table.data tfoot tr + tr td { border-top: 1px solid var(--line); padding-top: va
   top: 0;
   left: 0;
   z-index: 0;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
+  border-radius: var(--r-pill);
   background:
-    radial-gradient(circle at 31% 25%, rgba(255, 255, 255, .72), rgba(255, 255, 255, .08) 37%,
-      color-mix(in srgb, var(--safe) 17%, transparent) 68%,
-      color-mix(in srgb, var(--safe) 36%, transparent) 100%);
+    radial-gradient(120% 170% at 26% 18%, rgba(255, 255, 255, .62), transparent 42%),
+    radial-gradient(130% 190% at 72% 98%, color-mix(in srgb, var(--safe) 22%, transparent), transparent 58%),
+    color-mix(in srgb, var(--safe) 16%, var(--surface));
   border: 1px solid color-mix(in srgb, var(--safe) 30%, rgba(255, 255, 255, .42));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, .52),
@@ -1023,7 +1021,7 @@ table.data tfoot tr + tr td { border-top: 1px solid var(--line); padding-top: va
 .bubble-ripple {
   inset: -7px;
   border: 1px solid color-mix(in srgb, var(--safe) 40%, transparent);
-  border-radius: 50%;
+  border-radius: inherit;
   opacity: 0;
   transform: scale(.78);
 }
@@ -1034,15 +1032,15 @@ table.data tfoot tr + tr td { border-top: 1px solid var(--line); padding-top: va
   inset: 0;
   border-radius: inherit;
   background:
-    radial-gradient(circle at 68% 78%, color-mix(in srgb, var(--safe) 30%, transparent), transparent 52%),
-    radial-gradient(circle at 24% 22%, rgba(255, 255, 255, .38), transparent 42%);
+    radial-gradient(120% 180% at 26% 18%, rgba(255, 255, 255, .42), transparent 46%),
+    radial-gradient(130% 190% at 72% 98%, color-mix(in srgb, var(--safe) 24%, transparent), transparent 56%);
   animation: bubble-breathe 4.4s ease-in-out infinite;
 }
 .bubble-highlight {
-  left: 17%;
-  top: 11%;
-  width: 40%;
-  height: 25%;
+  left: 12%;
+  top: 10%;
+  width: 34%;
+  height: 42%;
   border-radius: 50%;
   background: linear-gradient(135deg, rgba(255,255,255,.92), rgba(255,255,255,.12));
   filter: blur(.35px);
@@ -1050,10 +1048,10 @@ table.data tfoot tr + tr td { border-top: 1px solid var(--line); padding-top: va
   transition: transform .42s var(--ease-bounce);
 }
 .bubble-shine {
-  left: 29%;
-  top: 21%;
-  width: 9%;
-  height: 9%;
+  left: 24%;
+  top: 20%;
+  width: 8%;
+  height: 12%;
   border-radius: 50%;
   background: #fff;
   opacity: .92;
