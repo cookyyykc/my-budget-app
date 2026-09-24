@@ -15,6 +15,7 @@ const tabbar = document.getElementById('tabbar');
 let current = TABS[0];
 let bubbleAnimation = null;
 let bubbleRippleTimer = 0;
+let highlightAnimation = null;
 const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function mountTabs() {
@@ -163,6 +164,50 @@ function wobbleBubble() {
   };
 }
 
+function animateHighlightReflection(event, tab) {
+  if (!tab || prefersReducedMotion()) return;
+  const bubble = tabbar.querySelector('.water-bubble');
+  const highlight = bubble?.querySelector('.bubble-highlight');
+  const shine = bubble?.querySelector('.bubble-shine');
+  if (!highlight || !shine || typeof highlight.animate !== 'function') return;
+
+  const rect = tab.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  const offsetX = (event.clientX || centerX) - centerX;
+  const offsetY = (event.clientY || centerY) - centerY;
+  const highlightX = Math.max(-8, Math.min(8, -offsetX * .36));
+  const highlightY = Math.max(-3, Math.min(3, -offsetY * .18));
+  const shineX = Math.max(-5, Math.min(5, -offsetX * .24));
+  const shineY = Math.max(-2, Math.min(2, -offsetY * .12));
+  const distance = Math.hypot(offsetX, offsetY);
+  const duration = Math.min(420, 240 + distance * .32);
+  const easing = 'cubic-bezier(.34, 1.56, .64, 1)';
+
+  const animateLayer = (layer, x, y) => {
+    let current = new DOMMatrix(getComputedStyle(layer).transform);
+    return layer.animate(
+      [
+        { transform: current.toString() },
+        { transform: `translate(${x * 1.28}px, ${y * 1.28}px)`, offset: .68 },
+        { transform: `translate(${x * .92}px, ${y * .92}px)`, offset: .86 },
+        { transform: `translate(${x}px, ${y}px)` }
+      ],
+      { duration, easing, fill: 'forwards' }
+    );
+  };
+
+  highlightAnimation?.cancel();
+  highlightAnimation = animateLayer(highlight, highlightX, highlightY);
+  const shineAnimation = animateLayer(shine, shineX, shineY);
+  highlightAnimation.onfinish = () => {
+    highlight.style.transform = `translate(${highlightX}px, ${highlightY}px)`;
+    shine.style.transform = `translate(${shineX}px, ${shineY}px)`;
+    shineAnimation.cancel();
+    highlightAnimation.cancel();
+    highlightAnimation = null;
+  };
+}
 function triggerBubbleRipple() {
   const bubble = tabbar.querySelector('.water-bubble');
   if (!bubble || prefersReducedMotion()) return;
@@ -183,13 +228,16 @@ function render({ animate = false, previousTab = null } = {}) {
 }
 
 tabbar.addEventListener('click', (e) => {
-  const id = e.target.closest('[data-tab]')?.dataset.tab;
+  const tab = e.target.closest('[data-tab]');
+  const id = tab?.dataset.tab;
   if (!id) return;
   if (id === current.id) {
+    animateHighlightReflection(e, tab);
     wobbleBubble();
     if (navigator.vibrate) navigator.vibrate(4);
     return;
   }
+  animateHighlightReflection(e, tab);
   const previousTab = tabbar.querySelector('.tab[aria-selected="true"]');
   current = TABS.find((t) => t.id === id);
   render({ animate: true, previousTab });
