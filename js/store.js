@@ -1,4 +1,5 @@
 import { d, fen, pct } from './format.js';
+import { queueRecordAction } from './sync-queue.js';
 
 const KEY = 'ubudget.v2';
 const SNAPSHOT_KEY = 'ubudget.v2.snapshot';   // 冗余快照：主数据损坏时用它自救
@@ -72,6 +73,15 @@ function emptyState() {
     budget: structuredClone(DEFAULT_BUDGET),
     settings: { defaultAccountId: 'wechat', seeded: false, theme: 'system' },
   };
+}
+
+function normalizeTags(value) {
+  const tags = Array.isArray(value) ? value : [];
+  return [...new Set(tags.map((tag) => String(tag).trim().slice(0, 16)).filter(Boolean))].slice(0, 8);
+}
+
+function normalizeRecord(record) {
+  return { ...record, tags: normalizeTags(record.tags) };
 }
 
 // ---------------------------------------------------------------- 历史记录
@@ -180,6 +190,7 @@ const listeners = new Set();
 function parseState(raw) {
   const parsed = JSON.parse(raw);
   if (!parsed || !Array.isArray(parsed.records)) throw new Error('账本结构不对');
+  parsed.records = parsed.records.map(normalizeRecord);
   parsed.budget = { ...structuredClone(DEFAULT_BUDGET), ...parsed.budget };
   parsed.settings = { defaultAccountId: 'wechat', seeded: false, theme: 'system', ...parsed.settings };
   return parsed;
@@ -240,23 +251,29 @@ export const store = {
       id: `r-${Date.now()}-${Math.floor(Math.random() * 1e4)}`,
       mealCount: 1,
       note: '',
+      tags: [],
       time: nowHHMM(),
       ...rec,
       createdAt: new Date().toISOString(),
     };
+    record.tags = normalizeTags(record.tags);
     state.records.push(record);
     persist(); emit();
+    void queueRecordAction('upsert', record);
     return record;
   },
   updateRecord(id, patch) {
     const i = state.records.findIndex((r) => r.id === id);
     if (i < 0) return;
-    state.records[i] = { ...state.records[i], ...patch };
+    state.records[i] = normalizeRecord({ ...state.records[i], ...patch });
     persist(); emit();
+    void queueRecordAction('upsert', state.records[i]);
   },
   deleteRecord(id) {
+    const removed = state.records.find((r) => r.id === id);
     state.records = state.records.filter((r) => r.id !== id);
     persist(); emit();
+    if (removed) void queueRecordAction('delete', removed);
   },
   setBudget(patch) {
     state.budget = { ...state.budget, ...patch };

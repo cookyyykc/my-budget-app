@@ -5,6 +5,7 @@ import {
   todayMealDots, monthLabelShort, nowHHMM,
 } from './store.js';
 import { icon, toast, openSheet, closeSheet, confirmSheet, budgetStrip, tray, hbars } from './components.js';
+import { getQueueCount } from './sync-queue.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -62,6 +63,21 @@ function commonNotes() {
     .slice(0, 6);
 }
 
+const BASE_TAGS = [
+  '食堂', '外卖', '奶茶', '咖啡', '水果', '饮料', '日用品',
+  '学习用品', '交通', '娱乐', '社交', '电费', '网购', '报销',
+];
+
+function tagSuggestions() {
+  const counts = new Map();
+  const add = (tag) => {
+    const clean = String(tag || '').trim();
+    if (clean) counts.set(clean, (counts.get(clean) || 0) + 1);
+  };
+  for (const r of store.state.records.slice(-180)) (r.tags || []).forEach(add);
+  return [...new Set([...counts.keys(), ...BASE_TAGS])].slice(0, 14);
+}
+
 // ================================================================ 记账
 const rec = {
   type: 'expense',
@@ -72,6 +88,7 @@ const rec = {
   mealTouched: false,          // 用户手动点过餐次后，改时间不再覆盖他的选择
   date: d.iso(),
   note: '',
+  tags: [],
   accountId: 'wechat',
 };
 
@@ -98,6 +115,7 @@ export const recordView = {
     const amountText = rec.amount ? fen.format(fen.fromYuan(rec.amount)) : '0.00';
     const account = ACCOUNTS.find((a) => a.id === rec.accountId);
     const activeCat = catById(rec.categoryId);
+    const noteLabel = rec.note || rec.tags.map((tag) => `#${tag}`).join(' ');
 
     return `
       ${budgetStrip(st, dots)}
@@ -137,8 +155,8 @@ export const recordView = {
           <button class="meta-btn" type="button" data-meta="account">
             ${icon('card', 17)}<span>${account?.name || '账户'}</span>
           </button>
-          <button class="meta-btn ${rec.note ? 'is-set' : ''}" type="button" data-meta="note">
-            ${icon('pencil', 17)}<span>${rec.note ? esc(rec.note) : '备注'}</span>
+          <button class="meta-btn ${noteLabel ? 'is-set' : ''}" type="button" data-meta="note">
+            ${icon('pencil', 17)}<span>${noteLabel ? esc(noteLabel) : '备注'}</span>
           </button>
         </div>
       </div>
@@ -283,11 +301,20 @@ function openMeta(kind, root) {
   }
   if (kind === 'note') {
     const notes = commonNotes();
+    const tags = tagSuggestions();
     openSheet({
       title: '备注',
       body: `<label class="field"><span class="field-lab">写点什么</span>
         <input type="text" id="note-input" maxlength="50" placeholder="和室友聚餐" value="${esc(rec.note)}" />
         <span class="hint">最多 50 字</span></label>
+        <div class="note-presets">
+          <span class="field-lab">标签</span>
+          <div class="note-preset-list" role="group" aria-label="标签">
+            ${tags.map((tag) => `
+              <button class="note-preset" type="button" data-tag="${esc(tag)}"
+                      aria-pressed="${rec.tags.includes(tag)}">${esc(tag)}</button>`).join('')}
+          </div>
+        </div>
         ${notes.length ? `
           <div class="note-presets">
             <span class="field-lab">常用备注</span>
@@ -301,6 +328,7 @@ function openMeta(kind, root) {
       onMount(el) {
         const input = el.querySelector('#note-input');
         const presetButtons = [...el.querySelectorAll('[data-common-note]')];
+        const tagButtons = [...el.querySelectorAll('[data-tag]')];
         const syncPresets = () => presetButtons.forEach((button) => {
           button.setAttribute('aria-pressed', String(button.dataset.commonNote === input.value.trim()));
         });
@@ -312,6 +340,15 @@ function openMeta(kind, root) {
           input.focus();
         });
         input.addEventListener('input', syncPresets);
+        el.querySelector('[aria-label="标签"]').addEventListener('click', (event) => {
+          const button = event.target.closest('[data-tag]');
+          if (!button) return;
+          const tag = button.dataset.tag;
+          const selected = new Set(rec.tags);
+          if (selected.has(tag)) selected.delete(tag); else selected.add(tag);
+          rec.tags = [...selected];
+          button.setAttribute('aria-pressed', String(selected.has(tag)));
+        });
         el.querySelector('[data-ok]').addEventListener('click', () => {
           rec.note = input.value.trim();
           closeSheet(); rerenderRecord(root);
@@ -340,6 +377,7 @@ function save(root) {
     date: rec.date,
     time: rec.time || nowHHMM(),
     note: rec.note,
+    tags: rec.tags,
     mealCount: 1,
   });
 
@@ -353,6 +391,7 @@ function save(root) {
   const keepTime = rec.time;
   rec.amount = '';
   rec.note = '';
+  rec.tags = [];
   rec.mealTouched = false;
   rec.mealType = rec.type === 'expense' ? mealForHHMM(keepTime) : null;
   rec.date = keepDate;
@@ -386,7 +425,7 @@ export const ledgerView = {
       <div class="screen">
         <div class="search">
           ${icon('search', 18)}
-          <input type="search" id="q" placeholder="搜备注或分类" value="${esc(state.query)}" aria-label="搜索流水" />
+          <input type="search" id="q" placeholder="搜备注、标签或分类" value="${esc(state.query)}" aria-label="搜索流水" />
         </div>
         <div class="filters" role="group" aria-label="筛选">
           ${[['all', '全部'], ['food', '餐饮'], ['other', '其他花费'], ['income', '收入']].map(([k, n]) => `
@@ -420,7 +459,9 @@ export const ledgerView = {
               ${list.map((r) => {
                 const c = catById(r.categoryId);
                 const m = mealById(r.mealType);
-                const sub = [r.time, m?.name, r.note, r.type === 'income' ? '收入' : null].filter(Boolean).join(' · ');
+                const tagText = (r.tags || []).map((tag) => `#${tag}`).join(' ');
+                const sub = [r.time, m?.name, r.note, tagText, r.type === 'income' ? '收入' : null]
+                  .filter(Boolean).join(' · ');
                 return `<button class="ledger-row" type="button" data-rec="${r.id}">
                   <span class="ledger-ic" style="--cat:${c.color}">${icon(m?.icon || c.icon, 18)}</span>
                   <span class="ledger-main">
@@ -487,6 +528,7 @@ function openRecord(id, root) {
   const found = store.state.records.find((x) => x.id === id);
   if (!found) return;
   const draft = { ...found };
+  draft.tags = [...(found.tags || [])];
   if (!draft.time) draft.time = '12:00';
 
   const cats = () => (draft.type === 'expense' ? EXPENSE_CATS : INCOME_CATS);
@@ -522,6 +564,13 @@ function openRecord(id, root) {
       <label class="field"><span class="field-lab">备注</span>
         <input type="text" id="e-note" maxlength="50" value="${esc(draft.note || '')}" /></label>
 
+      <span class="field-lab">标签</span>
+      <div class="note-preset-list" style="margin-bottom:16px">
+        ${tagSuggestions().map((tag) => `
+          <button class="note-preset" type="button" data-e-tag="${esc(tag)}"
+                  aria-pressed="${draft.tags.includes(tag)}">${esc(tag)}</button>`).join('')}
+      </div>
+
       <p class="notes">账户：${acc?.name || '—'}</p>`;
   };
 
@@ -543,6 +592,15 @@ function openRecord(id, root) {
         const tm = el.querySelector('#e-time');
         if (tm?.value) draft.time = tm.value;
       };
+      el.addEventListener('click', (event) => {
+        const tagBtn = event.target.closest('[data-e-tag]');
+        if (!tagBtn) return;
+        const tag = tagBtn.dataset.eTag;
+        const selected = new Set(draft.tags);
+        if (selected.has(tag)) selected.delete(tag); else selected.add(tag);
+        draft.tags = [...selected];
+        tagBtn.setAttribute('aria-pressed', String(selected.has(tag)));
+      });
       const repaint = () => {
         capture();
         el.querySelector('.sheet-body').innerHTML = bodyHtml();
@@ -572,6 +630,7 @@ function openRecord(id, root) {
             date,
             time,
             note: el.querySelector('#e-note').value.trim(),
+            tags: draft.tags,
           });
           closeSheet();
           toast('已保存修改');
@@ -990,6 +1049,11 @@ export const meView = {
               <span class="list-lab">已用空间</span>
               <span class="list-val" id="usage">计算中…</span>
             </div>
+            <div class="list-row">
+              <span class="list-lab">离线队列
+                <span class="ledger-sub" style="display:block">恢复网络后自动补同步</span></span>
+              <span class="list-val" id="queue-count">检查中…</span>
+            </div>
           </div>
           <p class="notes" style="margin-top:8px">
             浏览器存储可能被系统回收。建议每周点一次「备份到文件」，把导出的 json 存到网盘或微信收藏里；
@@ -1015,6 +1079,18 @@ export const meView = {
   },
 
   mount(root) {
+    const syncCountEl = root.querySelector('#queue-count');
+    const refreshSyncCount = async () => {
+      if (!syncCountEl) return;
+      const count = await getQueueCount();
+      syncCountEl.textContent = navigator.onLine
+        ? (count ? `待补 ${count} 条` : '已同步')
+        : (count ? `离线 ${count} 条` : '已同步');
+    };
+    refreshSyncCount();
+    document.addEventListener('ubudget:queue-synced', refreshSyncCount);
+    window.addEventListener('online', refreshSyncCount);
+    window.addEventListener('offline', refreshSyncCount);
     bind(root, (e) => {
       const set = e.target.closest('[data-set]')?.dataset.set;
       if (set) { openSetting(set, root); return; }

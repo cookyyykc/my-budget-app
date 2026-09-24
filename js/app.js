@@ -1,5 +1,6 @@
 import { icon, toast } from './components.js';
 import { store } from './store.js';
+import { scheduleQueueSync, registerBackgroundSync } from './sync-queue.js';
 import { setActiveView, recordView, ledgerView, statsView, meView, gotoMonth, backupFile } from './views.js';
 
 const TABS = [
@@ -156,6 +157,8 @@ document.addEventListener('keydown', (e) => {
 
 mountTabs();
 render();
+scheduleQueueSync();
+void registerBackgroundSync();
 window.addEventListener('resize', syncTabIndicator);
 
 // 离线不是错误：账本仍可使用，但要把状态说清楚。
@@ -207,6 +210,11 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     // 首次安装也会触发，只有「本来就有旧版本」才提示更新
     if (hadController) toast('已更新到新版本');
+  });
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data?.type === 'UBUDGET_QUEUE_SYNCED') {
+      document.dispatchEvent(new CustomEvent('ubudget:queue-synced', { detail: event.data }));
+    }
   });
   window.addEventListener('load', () => {
     navigator.serviceWorker
