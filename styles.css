@@ -1022,8 +1022,8 @@ table.data tfoot tr + tr td { border-top: 1px solid var(--line); padding-top: va
 .tab[aria-selected="true"] { color: var(--safe); }
 .tab[aria-selected="true"] svg {
   transform: translateY(-2px) scale(1.08);
-  animation: tab-icon-bounce .52s var(--ease-bounce);
 }
+.tab.is-bounce svg { animation: tab-icon-bounce .52s var(--ease-bounce); }
 .tab[aria-selected="true"] span { transform: translateY(1px); }
 @keyframes tab-icon-bounce {
   0% { transform: translateY(3px) scale(.9); }
@@ -1031,7 +1031,6 @@ table.data tfoot tr + tr td { border-top: 1px solid var(--line); padding-top: va
   78% { transform: translateY(-1px) scale(1.03); }
   100% { transform: translateY(-2px) scale(1.08); }
 }
-
 /* ============================================================
    弹层 / 提示
    ============================================================ */

@@ -37,27 +37,80 @@ function syncTabIndicator() {
   indicator.style.transform = `translate3d(${x}px, ${y}px, 0)`;
 }
 
-function updateTabs() {
+function updateTabs({ animate = false, previousTab = null } = {}) {
   tabbar.querySelectorAll('.tab').forEach((tab) => {
     tab.setAttribute('aria-selected', String(tab.dataset.tab === current.id));
   });
-  requestAnimationFrame(syncTabIndicator);
+  syncTabIndicator();
+  if (animate) animateTabChange(previousTab);
 }
 
-function render() {
+function animateTabChange(previousTab) {
+  const active = tabbar.querySelector('.tab[aria-selected="true"]');
+  const indicator = tabbar.querySelector('.tab-indicator');
+  if (!active || !indicator) return;
+
+  const barRect = tabbar.getBoundingClientRect();
+  const targetRect = active.getBoundingClientRect();
+  const targetX = targetRect.left - barRect.left - tabbar.clientLeft;
+  const targetY = targetRect.top - barRect.top - tabbar.clientTop;
+  const targetTransform = `translate3d(${targetX}px, ${targetY}px, 0)`;
+
+  if (previousTab && previousTab.isConnected) {
+    const fromRect = previousTab.getBoundingClientRect();
+    const fromX = fromRect.left - barRect.left - tabbar.clientLeft;
+    const fromY = fromRect.top - barRect.top - tabbar.clientTop;
+    if (typeof indicator.animate === 'function') {
+      indicator.style.transition = 'none';
+      const indicatorAnimation = indicator.animate(
+        [
+          { transform: `translate3d(${fromX}px, ${fromY}px, 0)` },
+          { transform: targetTransform }
+        ],
+        { duration: 480, easing: 'cubic-bezier(.34, 1.56, .64, 1)' }
+      );
+      indicatorAnimation.onfinish = () => { indicator.style.transition = ''; };
+    }
+  }
+
+  const icon = active.querySelector('svg');
+  if (icon && typeof icon.animate === 'function') {
+    icon.style.transition = 'none';
+    const iconAnimation = icon.animate(
+      [
+        { transform: 'translateY(3px) scale(.9)' },
+        { transform: 'translateY(-4px) scale(1.14)', offset: .52 },
+        { transform: 'translateY(-1px) scale(1.03)', offset: .78 },
+        { transform: 'translateY(-2px) scale(1.08)' }
+      ],
+      { duration: 520, easing: 'cubic-bezier(.34, 1.56, .64, 1)' }
+    );
+    iconAnimation.onfinish = () => { icon.style.transition = ''; };
+  } else if (icon) {
+    icon.style.transition = 'none';
+    icon.classList.add('is-bounce');
+    setTimeout(() => {
+      icon.classList.remove('is-bounce');
+      icon.style.transition = '';
+    }, 520);
+  }
+}
+
+function render({ animate = false, previousTab = null } = {}) {
   setActiveView(current.view);
   main.classList.toggle('is-record', current.id === 'record');
   main.innerHTML = current.view.html();
   current.view.mount(main);
-  updateTabs();
+  updateTabs({ animate, previousTab });
   window.scrollTo(0, 0);
 }
 
 tabbar.addEventListener('click', (e) => {
   const id = e.target.closest('[data-tab]')?.dataset.tab;
   if (!id || id === current.id) return;
+  const previousTab = tabbar.querySelector('.tab[aria-selected="true"]');
   current = TABS.find((t) => t.id === id);
-  render();
+  render({ animate: true, previousTab });
   if (navigator.vibrate) navigator.vibrate(4);
 });
 
@@ -65,8 +118,9 @@ tabbar.addEventListener('click', (e) => {
 document.addEventListener('app:tab', (e) => {
   const next = TABS.find((t) => t.id === e.detail?.id);
   if (!next) return;
+  const previousTab = tabbar.querySelector('.tab[aria-selected="true"]');
   current = next;
-  render();
+  render({ animate: true, previousTab });
 });
 
 // 月份切换（明细 / 统计页共用）

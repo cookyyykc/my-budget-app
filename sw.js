@@ -1,5 +1,5 @@
 // 离线可用：把界面资源缓存起来，断网也能记账。
-const CACHE = 'ubudget-v17';
+const CACHE = 'ubudget-v18';
 const ASSETS = [
   './',
   './index.html',
