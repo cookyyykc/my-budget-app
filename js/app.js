@@ -13,10 +13,20 @@ const main = document.getElementById('main');
 const tabbar = document.getElementById('tabbar');
 
 let current = TABS[0];
+let bubbleAnimation = null;
+let bubbleRippleTimer = 0;
+const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function mountTabs() {
   tabbar.setAttribute('role', 'tablist');
-  tabbar.innerHTML = `<span class="tab-indicator" aria-hidden="true"></span>` + TABS.map((t) => `
+  tabbar.innerHTML = `
+    <span class="water-bubble" aria-hidden="true">
+      <i class="bubble-tail"></i>
+      <i class="bubble-ripple"></i>
+      <i class="bubble-glow"></i>
+      <i class="bubble-highlight"></i>
+      <i class="bubble-shine"></i>
+    </span>` + TABS.map((t) => `
     <button class="tab" type="button" role="tab" data-tab="${t.id}"
             aria-selected="${current.id === t.id}" aria-controls="main">
       ${icon(t.icon, 23)}
@@ -24,56 +34,89 @@ function mountTabs() {
     </button>`).join('');
 }
 
-function syncTabIndicator() {
+function bubbleCenter(tab) {
   const active = tabbar.querySelector('.tab[aria-selected="true"]');
-  const indicator = tabbar.querySelector('.tab-indicator');
-  if (!active || !indicator) return;
+  const bubble = tabbar.querySelector('.water-bubble');
+  const tabIcon = tab?.querySelector('svg');
+  if (!active || !bubble || !tabIcon) return null;
   const barRect = tabbar.getBoundingClientRect();
-  const rect = active.getBoundingClientRect();
-  const x = rect.left - barRect.left - tabbar.clientLeft;
-  const y = rect.top - barRect.top - tabbar.clientTop;
-  indicator.style.width = `${rect.width}px`;
-  indicator.style.height = `${rect.height}px`;
-  indicator.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+  const iconRect = tabIcon.getBoundingClientRect();
+  return {
+    x: iconRect.left + iconRect.width / 2 - barRect.left - tabbar.clientLeft - bubble.offsetWidth / 2,
+    y: iconRect.top + iconRect.height / 2 - barRect.top - tabbar.clientTop - bubble.offsetHeight / 2
+  };
 }
 
 function updateTabs({ animate = false, previousTab = null } = {}) {
+  const active = tabbar.querySelector('.tab[aria-selected="true"]');
   tabbar.querySelectorAll('.tab').forEach((tab) => {
     tab.setAttribute('aria-selected', String(tab.dataset.tab === current.id));
   });
-  syncTabIndicator();
-  if (animate) animateTabChange(previousTab);
+  const nextActive = tabbar.querySelector('.tab[aria-selected="true"]');
+  positionBubble(nextActive, { animate, previousTab });
+  if (animate && active !== nextActive) animateActiveIcon();
 }
 
-function animateTabChange(previousTab) {
-  const active = tabbar.querySelector('.tab[aria-selected="true"]');
-  const indicator = tabbar.querySelector('.tab-indicator');
-  if (!active || !indicator) return;
+function positionBubble(active, { hoverTarget = null, animate = false, previousTab = null } = {}) {
+  const bubble = tabbar.querySelector('.water-bubble');
+  if (!active || !bubble) return;
+  const target = bubbleCenter(active);
+  if (!target) return;
+  let { x, y } = target;
 
-  const barRect = tabbar.getBoundingClientRect();
-  const targetRect = active.getBoundingClientRect();
-  const targetX = targetRect.left - barRect.left - tabbar.clientLeft;
-  const targetY = targetRect.top - barRect.top - tabbar.clientTop;
-  const targetTransform = `translate3d(${targetX}px, ${targetY}px, 0)`;
-
-  if (previousTab && previousTab.isConnected) {
-    const fromRect = previousTab.getBoundingClientRect();
-    const fromX = fromRect.left - barRect.left - tabbar.clientLeft;
-    const fromY = fromRect.top - barRect.top - tabbar.clientTop;
-    if (typeof indicator.animate === 'function') {
-      indicator.style.transition = 'none';
-      const indicatorAnimation = indicator.animate(
-        [
-          { transform: `translate3d(${fromX}px, ${fromY}px, 0)` },
-          { transform: targetTransform }
-        ],
-        { duration: 480, easing: 'cubic-bezier(.34, 1.56, .64, 1)' }
-      );
-      indicatorAnimation.onfinish = () => { indicator.style.transition = ''; };
+  if (hoverTarget && hoverTarget !== active && !prefersReducedMotion()) {
+    const hovered = bubbleCenter(hoverTarget);
+    if (hovered) {
+      const pull = Math.max(-6, Math.min(6, (hovered.x - x) * .12));
+      x += pull;
+      y += (hovered.y - y) * .06;
     }
   }
 
-  const icon = active.querySelector('svg');
+  const targetTransform = `translate3d(${x}px, ${y}px, 0)`;
+  if (animate && previousTab?.isConnected && !prefersReducedMotion() && typeof bubble.animate === 'function') {
+    const barRect = tabbar.getBoundingClientRect();
+    const currentRect = bubble.getBoundingClientRect();
+    const fromX = currentRect.left + currentRect.width / 2 - barRect.left - tabbar.clientLeft - bubble.offsetWidth / 2;
+    const fromY = currentRect.top + currentRect.height / 2 - barRect.top - tabbar.clientTop - bubble.offsetHeight / 2;
+    const midX = (fromX + x) / 2;
+    const midY = (fromY + y) / 2;
+    const distance = Math.hypot(x - fromX, y - fromY);
+
+    bubble.style.transition = 'none';
+    bubble.style.transform = targetTransform;
+    bubble.style.setProperty('--move-x', `${x - fromX}px`);
+    bubble.style.setProperty('--move-y', `${y - fromY}px`);
+    bubbleAnimation?.cancel();
+    bubble.classList.add('is-moving');
+    bubbleAnimation = bubble.animate(
+      [
+        { transform: `translate3d(${fromX}px, ${fromY}px, 0) scale(1, 1)` },
+        { transform: `translate3d(${midX}px, ${midY}px, 0) scale(1.18, .84)` },
+        { transform: `translate3d(${x}px, ${y}px, 0) scale(.9, 1.08)`, offset: .74 },
+        { transform: `${targetTransform} scale(1, 1)` }
+      ],
+      {
+        duration: Math.min(640, Math.max(420, 420 + distance * .18)),
+        easing: 'cubic-bezier(.34, 1.56, .64, 1)'
+      }
+    );
+    bubbleAnimation.onfinish = () => {
+      bubble.style.transition = '';
+      bubble.classList.remove('is-moving');
+      bubbleAnimation = null;
+      triggerBubbleRipple();
+    };
+  } else {
+    bubble.style.transform = targetTransform;
+  }
+}
+
+function animateActiveIcon() {
+  const active = tabbar.querySelector('.tab[aria-selected="true"]');
+  const icon = active?.querySelector('svg');
+  if (!icon) return;
+
   if (icon && typeof icon.animate === 'function') {
     icon.style.transition = 'none';
     const iconAnimation = icon.animate(
@@ -96,6 +139,38 @@ function animateTabChange(previousTab) {
   }
 }
 
+function wobbleBubble() {
+  const bubble = tabbar.querySelector('.water-bubble');
+  if (!bubble || prefersReducedMotion()) return;
+  const base = bubble.style.transform || getComputedStyle(bubble).transform;
+  bubble.style.transition = 'none';
+  bubbleAnimation?.cancel();
+  bubbleAnimation = bubble.animate(
+    [
+      { transform: `${base} scale(1, 1)` },
+      { transform: `${base} translateX(-4px) scale(1.08, .92)` },
+      { transform: `${base} translateX(4px) scale(.94, 1.06)` },
+      { transform: `${base} translateX(-2px) scale(1.03, .97)` },
+      { transform: `${base} scale(1, 1)` }
+    ],
+    { duration: 300, easing: 'cubic-bezier(.34, 1.56, .64, 1)' }
+  );
+  bubbleAnimation.onfinish = () => {
+    bubble.style.transition = '';
+    bubbleAnimation = null;
+  };
+}
+
+function triggerBubbleRipple() {
+  const bubble = tabbar.querySelector('.water-bubble');
+  if (!bubble || prefersReducedMotion()) return;
+  bubble.classList.remove('is-rippling');
+  void bubble.offsetWidth;
+  bubble.classList.add('is-rippling');
+  clearTimeout(bubbleRippleTimer);
+  bubbleRippleTimer = setTimeout(() => bubble.classList.remove('is-rippling'), 600);
+}
+
 function render({ animate = false, previousTab = null } = {}) {
   setActiveView(current.view);
   main.classList.toggle('is-record', current.id === 'record');
@@ -107,12 +182,27 @@ function render({ animate = false, previousTab = null } = {}) {
 
 tabbar.addEventListener('click', (e) => {
   const id = e.target.closest('[data-tab]')?.dataset.tab;
-  if (!id || id === current.id) return;
+  if (!id) return;
+  if (id === current.id) {
+    wobbleBubble();
+    if (navigator.vibrate) navigator.vibrate(4);
+    return;
+  }
   const previousTab = tabbar.querySelector('.tab[aria-selected="true"]');
   current = TABS.find((t) => t.id === id);
   render({ animate: true, previousTab });
   if (navigator.vibrate) navigator.vibrate(4);
 });
+
+if (window.matchMedia('(hover: hover)').matches) {
+  tabbar.addEventListener('pointerover', (e) => {
+    const hovered = e.target.closest('.tab');
+    if (hovered) positionBubble(tabbar.querySelector('.tab[aria-selected="true"]'), { hoverTarget: hovered });
+  });
+  tabbar.addEventListener('pointerleave', () => {
+    positionBubble(tabbar.querySelector('.tab[aria-selected="true"]'));
+  });
+}
 
 // 别的地方（比如明细页的「＋补记」、预算条上的餐次点）可以请求切到记账页
 document.addEventListener('app:tab', (e) => {
@@ -156,7 +246,7 @@ document.addEventListener('keydown', (e) => {
 
 mountTabs();
 render();
-window.addEventListener('resize', syncTabIndicator);
+window.addEventListener('resize', () => positionBubble(tabbar.querySelector('.tab[aria-selected="true"]')));
 
 // 离线不是错误：账本仍可使用，但要把状态说清楚。
 function syncOnlineState(showToast = false) {
