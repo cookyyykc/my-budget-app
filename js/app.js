@@ -153,11 +153,9 @@ document.addEventListener('click', (e) => {
 let tabDrag = null;
 
 function getTabDragBounds() {
-  const tabs = [...tabbar.querySelectorAll('.tab')];
-  if (!tabs.length) return { minX: 0, maxX: 0 };
-  const barRect = tabbar.getBoundingClientRect();
-  const toX = (tab) => tab.getBoundingClientRect().left - barRect.left - tabbar.clientLeft;
-  return { minX: toX(tabs[0]), maxX: toX(tabs[tabs.length - 1]) };
+  const indicator = tabbar.querySelector('.tab-indicator');
+  const width = indicator?.offsetWidth || 0;
+  return { minX: 0, maxX: Math.max(0, tabbar.clientWidth - width) };
 }
 
 tabbar.addEventListener('pointerdown', (e) => {
