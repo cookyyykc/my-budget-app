@@ -39,60 +39,39 @@ function syncTabIndicator() {
 }
 
 function updateTabs({ animate = false, previousTab = null } = {}) {
+  const indicator = tabbar.querySelector('.tab-indicator');
+  const fromTab = animate ? previousTab : null;
+  const fromRect = fromTab?.isConnected ? fromTab.getBoundingClientRect() : null;
+  const fromBarRect = fromTab?.isConnected ? tabbar.getBoundingClientRect() : null;
   tabbar.querySelectorAll('.tab').forEach((tab) => {
     tab.setAttribute('aria-selected', String(tab.dataset.tab === current.id));
   });
-  syncTabIndicator();
-  if (animate) animateTabChange(previousTab);
-}
-
-function animateTabChange(previousTab) {
   const active = tabbar.querySelector('.tab[aria-selected="true"]');
-  const indicator = tabbar.querySelector('.tab-indicator');
   if (!active || !indicator) return;
-
   const barRect = tabbar.getBoundingClientRect();
-  const targetRect = active.getBoundingClientRect();
-  const targetX = targetRect.left - barRect.left - tabbar.clientLeft;
-  const targetY = targetRect.top - barRect.top - tabbar.clientTop;
-  const targetTransform = `translate3d(${targetX}px, ${targetY}px, 0)`;
+  const rect = active.getBoundingClientRect();
+  const x = rect.left - barRect.left - tabbar.clientLeft;
+  const y = rect.top - barRect.top - tabbar.clientTop;
 
-  if (previousTab && previousTab.isConnected) {
-    const fromRect = previousTab.getBoundingClientRect();
-    const fromX = fromRect.left - barRect.left - tabbar.clientLeft;
-    const fromY = fromRect.top - barRect.top - tabbar.clientTop;
-    if (typeof indicator.animate === 'function') {
-      indicator.style.transition = 'none';
-      const indicatorAnimation = indicator.animate(
-        [
-          { transform: `translate3d(${fromX}px, ${fromY}px, 0)` },
-          { transform: targetTransform }
-        ],
-        { duration: 480, easing: 'cubic-bezier(.34, 1.56, .64, 1)' }
-      );
-      indicatorAnimation.onfinish = () => { indicator.style.transition = ''; };
-    }
+  indicator.style.width = `${rect.width}px`;
+  indicator.style.height = `${rect.height}px`;
+
+  if (fromRect && fromBarRect) {
+    const fromX = fromRect.left - fromBarRect.left - tabbar.clientLeft;
+    const fromY = fromRect.top - fromBarRect.top - tabbar.clientTop;
+    indicator.style.transition = 'none';
+    indicator.style.transform = `translate3d(${fromX}px, ${fromY}px, 0)`;
+    void indicator.getBoundingClientRect();
+    indicator.style.transition = '';
   }
+  indicator.style.transform = `translate3d(${x}px, ${y}px, 0)`;
 
   const icon = active.querySelector('svg');
-  if (icon && typeof icon.animate === 'function') {
-    icon.style.transition = 'none';
-    const iconAnimation = icon.animate(
-      [
-        { transform: 'translateY(3px) scale(.9)' },
-        { transform: 'translateY(-4px) scale(1.14)', offset: .52 },
-        { transform: 'translateY(-1px) scale(1.03)', offset: .78 },
-        { transform: 'translateY(-2px) scale(1.08)' }
-      ],
-      { duration: 520, easing: 'cubic-bezier(.34, 1.56, .64, 1)' }
-    );
-    iconAnimation.onfinish = () => { icon.style.transition = ''; };
-  } else if (icon) {
-    icon.style.transition = 'none';
+  if (icon && animate) {
     icon.classList.add('is-bounce');
-    setTimeout(() => {
+    clearTimeout(icon.__bounceTimer);
+    icon.__bounceTimer = setTimeout(() => {
       icon.classList.remove('is-bounce');
-      icon.style.transition = '';
     }, 520);
   }
 }
@@ -106,14 +85,7 @@ function render({ animate = false, previousTab = null } = {}) {
     updateTabs({ animate, previousTab });
     window.scrollTo(0, 0);
   };
-  if (animate && document.startViewTransition) {
-    main.classList.add('is-transitioning');
-    document.startViewTransition(apply).finished.finally(() => {
-      main.classList.remove('is-transitioning');
-    });
-  } else {
-    apply();
-  }
+  apply();
 }
 
 tabbar.addEventListener('click', (e) => {
@@ -146,8 +118,7 @@ document.addEventListener('click', (e) => {
     current.view.mount(main);
     window.scrollTo(0, y);
   };
-  if (document.startViewTransition) document.startViewTransition(apply);
-  else apply();
+  apply();
 });
 
 // 物理键盘：在记账页也能直接敲数字
