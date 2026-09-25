@@ -69,8 +69,8 @@
   --num: ui-monospace, "SF Mono", "SF Pro Text", var(--font);
 
   --tabbar-h: 80px;
-  --key-row: clamp(42px, 5.6vh, 48px);
-  --key-row: clamp(42px, 5.6svh, 48px);
+  --key-row: clamp(42px, 5.8vh, 54px);
+  --key-row: clamp(42px, 5.8svh, 54px);
   --keypad-h: calc(var(--key-row) * 4 + 36px);
   /* 底部玻璃底座：数字键盘与导航条共用同一套材质 */
   --dock-inset: 12px;
@@ -274,6 +274,10 @@ button { cursor: pointer; border: 0; background: none; padding: 0; min-height: 4
   padding: 8px var(--sp-4);
 }
 .strip[data-state="over"] { background: color-mix(in srgb, var(--over) 10%, var(--paper)); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .strip { border-bottom-color: transparent; }
+}
+html[data-theme="dark"] .strip { border-bottom-color: transparent; }
 
 .strip-top {
   display: flex;
@@ -545,7 +549,8 @@ html[data-online="false"] .offline-badge { display: block; }
   background: var(--surface);
   border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
   font-family: var(--num);
-  font-size: 21px;
+  font-size: clamp(21px, 2.5vh, 23px);
+  font-size: clamp(21px, 2.5svh, 23px);
   font-weight: 500;
   box-shadow: 0 1px 2px rgba(20, 24, 27, .08);
   transition: transform .1s var(--ease-out), background .1s var(--ease-out);
