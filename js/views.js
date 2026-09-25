@@ -126,38 +126,40 @@ export const recordView = {
           <button class="amount-back" type="button" data-key="back" aria-label="退格">${icon('back', 20)}</button>
         </div>
 
-        <div style="display:flex;justify-content:center;margin-bottom:10px">
-          <div class="seg" role="tablist" aria-label="收支类型">
-            <button type="button" role="tab" data-type="expense" aria-selected="${rec.type === 'expense'}">支出</button>
-            <button type="button" role="tab" data-type="income" aria-selected="${rec.type === 'income'}">收入</button>
+        <div class="seg-swap" id="seg-swap">
+          <div class="seg-wrap">
+            <div class="seg" role="tablist" aria-label="收支类型">
+              <button type="button" role="tab" data-type="expense" aria-selected="${rec.type === 'expense'}">支出</button>
+              <button type="button" role="tab" data-type="income" aria-selected="${rec.type === 'income'}">收入</button>
+            </div>
           </div>
-        </div>
 
-        <div class="cat-grid" role="group" aria-label="分类">
-          ${cats.map((c) => `
-            <button class="cat" type="button" data-cat="${c.id}" aria-pressed="${rec.categoryId === c.id}"
-                    style="--cat:${c.color}">
-              <span class="ic">${icon(c.icon, 21)}</span>${c.name}
-            </button>`).join('')}
-        </div>
+          <div class="cat-grid" role="group" aria-label="分类">
+            ${cats.map((c) => `
+              <button class="cat" type="button" data-cat="${c.id}" aria-pressed="${rec.categoryId === c.id}"
+                      style="--cat:${c.color}">
+                <span class="ic">${icon(c.icon, 21)}</span>${c.name}
+              </button>`).join('')}
+          </div>
 
-        ${rec.type === 'expense' && activeCat.meals ? `
-          <div class="meal-chips" role="group" aria-label="餐次">
-            ${MEALS.map((m) => `
-              <button class="chip" type="button" data-meal="${m.id}" aria-pressed="${rec.mealType === m.id}">${m.name}</button>`).join('')}
-          </div>` : ''}
+          ${rec.type === 'expense' && activeCat.meals ? `
+            <div class="meal-chips" role="group" aria-label="餐次">
+              ${MEALS.map((m) => `
+                <button class="chip" type="button" data-meal="${m.id}" aria-pressed="${rec.mealType === m.id}">${m.name}</button>`).join('')}
+            </div>` : ''}
 
-        <div class="meta-row">
-          <button class="meta-btn ${rec.date !== d.iso() ? 'is-set' : ''}" type="button" data-meta="date"
-                  aria-label="记账时间：${d.dayLabel(rec.date)} ${rec.time}">
-            ${icon('calendar', 17)}<span>${d.dayLabel(rec.date)} ${rec.time}</span>
-          </button>
-          <button class="meta-btn" type="button" data-meta="account">
-            ${icon('card', 17)}<span>${account?.name || '账户'}</span>
-          </button>
-          <button class="meta-btn ${noteLabel ? 'is-set' : ''}" type="button" data-meta="note">
-            ${icon('pencil', 17)}<span>${noteLabel ? esc(noteLabel) : '备注'}</span>
-          </button>
+          <div class="meta-row">
+            <button class="meta-btn ${rec.date !== d.iso() ? 'is-set' : ''}" type="button" data-meta="date"
+                    aria-label="记账时间：${d.dayLabel(rec.date)} ${rec.time}">
+              ${icon('calendar', 17)}<span>${d.dayLabel(rec.date)} ${rec.time}</span>
+            </button>
+            <button class="meta-btn" type="button" data-meta="account">
+              ${icon('card', 17)}<span>${account?.name || '账户'}</span>
+            </button>
+            <button class="meta-btn ${noteLabel ? 'is-set' : ''}" type="button" data-meta="note">
+              ${icon('pencil', 17)}<span>${noteLabel ? esc(noteLabel) : '备注'}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -206,7 +208,7 @@ export const recordView = {
         rec.categoryId = rec.type === 'expense' ? 'food' : 'allowance';
         rec.mealType = rec.type === 'expense' ? mealForHHMM(rec.time) : null;
         rec.mealTouched = false;
-        rerenderRecord(root);
+        rerenderRecord(root, typeBtn.dataset.type === 'expense' ? -1 : 1);
         return;
       }
 
@@ -236,11 +238,22 @@ export const recordView = {
   },
 };
 
-function rerenderRecord(root) {
+function rerenderRecord(root, direction = 0) {
   const scrollY = window.scrollY;
   root.innerHTML = recordView.html();
   recordView.mount(root);
   window.scrollTo(0, scrollY);
+
+  const swap = root.querySelector('#seg-swap');
+  if (direction && swap && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    swap.animate(
+      [
+        { transform: `translateX(${direction * 16}px)`, opacity: .24 },
+        { transform: 'translateX(0)', opacity: 1 },
+      ],
+      { duration: 280, easing: 'cubic-bezier(.22, 1.36, .64, 1)' },
+    );
+  }
 }
 
 function openMeta(kind, root) {

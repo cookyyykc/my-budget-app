@@ -372,14 +372,22 @@ html[data-theme="dark"] .strip { border-bottom-color: transparent; }
 
 .amount-row {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: flex-end;
   gap: var(--sp-2);
   padding: 10px 0 8px;
+  height: 64px;
   border-bottom: 2px solid var(--ink);
   margin-bottom: 12px;
 }
-.amount-cur { font-size: 24px; font-weight: 500; color: var(--ink-3); }
+.amount-cur {
+  align-self: flex-end;
+  margin-bottom: 5px;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--ink-3);
+}
 .amount {
   font-family: var(--num);
   font-size: var(--fs-display);
@@ -399,6 +407,17 @@ html[data-theme="dark"] .strip { border-bottom-color: transparent; }
 }
 .amount-back:active { background: var(--paper-2); }
 
+.seg-swap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.seg-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
+}
 .seg {
   display: inline-flex;
   background: var(--paper-2);
@@ -616,7 +635,7 @@ html[data-online="false"] .offline-badge { display: block; }
 /* 短屏手机：进一步收紧记账页，保证餐次和备注一屏可见、无需上下滑动 */
 @media (max-height: 779px) {
   .strip { padding: 6px var(--sp-4); }
-  .amount-row { padding: 8px 0 6px; margin-bottom: 10px; }
+  .amount-row { height: 56px; padding: 8px 0 6px; margin-bottom: 10px; }
   .amount { font-size: 36px; min-height: 36px; }
   .amount.is-empty { font-size: 27px; }
   .amount-back { width: 38px; height: 38px; }
@@ -631,7 +650,7 @@ html[data-online="false"] .offline-badge { display: block; }
   :root { --key-row: 38px; }
   .strip { padding: 5px var(--sp-4); }
   .strip .meal-dots { display: none; }
-  .amount-row { padding: 5px 0 4px; margin-bottom: 8px; }
+  .amount-row { height: 48px; padding: 5px 0 4px; margin-bottom: 8px; }
   .amount { font-size: 30px; min-height: 30px; }
   .amount.is-empty { font-size: 24px; }
   .cat { padding: 5px 2px 3px; }
@@ -646,7 +665,7 @@ html[data-online="false"] .offline-badge { display: block; }
   .strip { padding: 4px var(--sp-4); }
   .strip-top { margin-bottom: 4px; }
   .strip-foot { margin-top: 4px; }
-  .amount-row { padding: 4px 0 3px; margin-bottom: 6px; }
+  .amount-row { height: 40px; padding: 4px 0 3px; margin-bottom: 6px; }
   .amount { font-size: 24px; min-height: 24px; }
   .amount.is-empty { font-size: 20px; }
   .cat { padding: 3px 2px 2px; }
