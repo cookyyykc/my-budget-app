@@ -126,9 +126,8 @@ export const recordView = {
           <button class="amount-back" type="button" data-key="back" aria-label="退格">${icon('back', 20)}</button>
         </div>
 
-        <div style="display:flex;justify-content:center;margin-bottom:16px">
-          <div class="seg" role="tablist" aria-label="收支类型" data-active="${rec.type}">
-            <span class="seg-indicator" aria-hidden="true"></span>
+        <div style="display:flex;justify-content:center;margin-bottom:10px">
+          <div class="seg" role="tablist" aria-label="收支类型">
             <button type="button" role="tab" data-type="expense" aria-selected="${rec.type === 'expense'}">支出</button>
             <button type="button" role="tab" data-type="income" aria-selected="${rec.type === 'income'}">收入</button>
           </div>
@@ -174,8 +173,6 @@ export const recordView = {
   },
 
   mount(root) {
-    root.dataset.recordType = rec.type;
-    positionSegIndicator(root);
     const amountEl = root.querySelector('#amount');
     const saveEl = root.querySelector('.key--save small');
 
@@ -186,7 +183,7 @@ export const recordView = {
       if (saveEl) saveEl.textContent = `¥${text}`;
     };
 
-    bind(root, async (e) => {
+    bind(root, (e) => {
       const key = e.target.closest('[data-key]')?.dataset.key;
       if (key) {
         if (key === 'back') rec.amount = rec.amount.slice(0, -1);
@@ -205,17 +202,11 @@ export const recordView = {
 
       const typeBtn = e.target.closest('[data-type]');
       if (typeBtn) {
-        const previousType = root.dataset.recordType || rec.type;
-        const nextType = typeBtn.dataset.type;
-        if (nextType === previousType) return;
-        const transitionId = Symbol('seg');
-        segTransition.id = transitionId;
-        const indicatorAnimation = animateSegIndicator(root, typeBtn);
-        rec.type = nextType;
+        rec.type = typeBtn.dataset.type;
         rec.categoryId = rec.type === 'expense' ? 'food' : 'allowance';
         rec.mealType = rec.type === 'expense' ? mealForHHMM(rec.time) : null;
         rec.mealTouched = false;
-        await rerenderRecord(root, { previousType, transitionId, indicatorAnimation });
+        rerenderRecord(root);
         return;
       }
 
@@ -245,67 +236,11 @@ export const recordView = {
   },
 };
 
-let segTransition = { id: null };
-
-function reducedMotion() {
-  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-}
-
-function playTransition(element, keyframes, duration = 180, easing = '') {
-  if (!element || reducedMotion() || typeof element.animate !== 'function') return null;
-  element.getAnimations?.().forEach((animation) => animation.cancel());
-  return element.animate(keyframes, {
-    duration,
-    easing: easing || getComputedStyle(document.documentElement)
-      .getPropertyValue('--ease-spring').trim() || 'cubic-bezier(.22, 1.2, .36, 1)',
-  });
-}
-
-function positionSegIndicator(root) {
-  const seg = root.querySelector('.seg');
-  const indicator = seg?.querySelector('.seg-indicator');
-  const active = seg?.querySelector('button[aria-selected="true"]');
-  if (!seg || !indicator || !active) return;
-  indicator.style.width = `${active.offsetWidth}px`;
-  indicator.style.transform = `translate3d(${active.offsetLeft}px, 0, 0)`;
-}
-
-function animateSegIndicator(root, targetButton) {
-  const indicator = root.querySelector('.seg-indicator');
-  if (!indicator) return null;
-  const from = indicator.style.transform || 'translate3d(0, 0, 0)';
-  const to = `translate3d(${targetButton.offsetLeft}px, 0, 0)`;
-  return playTransition(indicator, [{ transform: from }, { transform: to }], 180);
-}
-
-async function rerenderRecord(root, options = {}) {
+function rerenderRecord(root) {
   const scrollY = window.scrollY;
-  const previousBody = options.previousType ? root.querySelector('.rec-body') : null;
-  const direction = options.previousType === 'expense' ? 1 : -1;
-  const bodyAnimation = previousBody ? playTransition(previousBody, [
-    { opacity: 1, transform: 'translate3d(0, 0, 0)' },
-    { opacity: 0, transform: `translate3d(${-8 * direction}px, 0, 0)` },
-  ], 140, 'cubic-bezier(.4, 0, 1, 1)') : null;
-
-  if (bodyAnimation || options.indicatorAnimation) {
-    try { await Promise.allSettled([bodyAnimation?.finished, options.indicatorAnimation?.finished]); }
-    catch { /* interrupted animations fall through to the next render */ }
-  }
-  if (options.transitionId && segTransition.id !== options.transitionId) return;
-
   root.innerHTML = recordView.html();
-  root.dataset.recordType = rec.type;
   recordView.mount(root);
-  positionSegIndicator(root);
   window.scrollTo(0, scrollY);
-
-  const nextBody = root.querySelector('.rec-body');
-  if (options.previousType && nextBody) {
-    playTransition(nextBody, [
-      { opacity: 0, transform: `translate3d(${10 * direction}px, 0, 0)` },
-      { opacity: 1, transform: 'translate3d(0, 0, 0)' },
-    ], 220);
-  }
 }
 
 function openMeta(kind, root) {
