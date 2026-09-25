@@ -64,6 +64,15 @@
     return;
   }
 
+  // 手机端（触屏）不用真折射：移动 Chromium 的 SVG backdrop filter
+  // 会把胶囊压到玻璃层下面（深色模式下像消失），所以手机统一走方案 B 材质。
+  var finePointer = false;
+  try { finePointer = matchMedia('(pointer: fine)').matches; } catch (e) { finePointer = false; }
+  if (!finePointer) {
+    console.info('[ios27-tabbar] 触屏设备已回退到方案 B 材质');
+    return;
+  }
+
   var el = document.querySelector(SELECTOR);
   if (!el) {
     // 脚本若被放到 <head>，等 DOM 就绪再挂

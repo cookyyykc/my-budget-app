@@ -1378,11 +1378,13 @@ main.is-transitioning { pointer-events: none; }
     --ios27-glass-inner:  rgba(26, 26, 26, 1);
     --ios27-glass-shadow: 0 8px 15px rgba(0, 0, 0, .04);
 
+    --ios27-pill-rim:     rgba(87, 177, 137, .34);
     --ios27-pill-rim:     color-mix(in srgb, var(--safe) 34%, transparent);
     --ios27-pill-inner:   rgba(255, 255, 255, .22);
     --ios27-pill-shadow:  0 8px 24px rgba(87, 177, 137, .16);
   }
   :root:not([data-theme="light"]) .tab-indicator {
+    background: rgb(42, 60, 56);
     background: color-mix(in srgb, var(--safe) 16%, var(--surface));
   }
 }
@@ -1393,11 +1395,13 @@ html[data-theme="dark"] .tabbar {
   --ios27-glass-inner:  rgba(26, 26, 26, 1);
   --ios27-glass-shadow: 0 8px 15px rgba(0, 0, 0, .04);
 
+  --ios27-pill-rim:     rgba(87, 177, 137, .34);
   --ios27-pill-rim:     color-mix(in srgb, var(--safe) 34%, transparent);
   --ios27-pill-inner:   rgba(255, 255, 255, .22);
   --ios27-pill-shadow:  0 8px 24px rgba(87, 177, 137, .16);
 }
 html[data-theme="dark"] .tab-indicator {
+  background: rgb(42, 60, 56);
   background: color-mix(in srgb, var(--safe) 16%, var(--surface));
 }
 
