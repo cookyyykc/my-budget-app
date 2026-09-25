@@ -56,18 +56,38 @@ function updateTabs({ animate = false, previousTab = null } = {}) {
   indicator.style.width = `${rect.width}px`;
   indicator.style.height = `${rect.height}px`;
 
-  if (fromRect && fromBarRect) {
+  if (animate && fromRect && fromBarRect) {
     const fromX = fromRect.left - fromBarRect.left - tabbar.clientLeft;
     const fromY = fromRect.top - fromBarRect.top - tabbar.clientTop;
+    if (typeof indicator.animate === 'function') {
+      indicator.getAnimations?.().forEach((animation) => animation.cancel());
+      indicator.animate(
+        [
+          { transform: `translate3d(${fromX}px, ${fromY}px, 0)` },
+          { transform: `translate3d(${x}px, ${y}px, 0)` }
+        ],
+        { duration: 520, easing: 'cubic-bezier(.34, 1.56, .64, 1)' }
+      );
+      indicator.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+    } else {
+      indicator.style.transition = 'none';
+      indicator.style.transform = `translate3d(${fromX}px, ${fromY}px, 0)`;
+      void indicator.getBoundingClientRect();
+      indicator.style.transition = '';
+      requestAnimationFrame(() => {
+        indicator.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+      });
+    }
+  } else {
     indicator.style.transition = 'none';
-    indicator.style.transform = `translate3d(${fromX}px, ${fromY}px, 0)`;
-    void indicator.getBoundingClientRect();
     indicator.style.transition = '';
+    indicator.style.transform = `translate3d(${x}px, ${y}px, 0)`;
   }
-  indicator.style.transform = `translate3d(${x}px, ${y}px, 0)`;
 
   const icon = active.querySelector('svg');
   if (icon && animate) {
+    icon.classList.remove('is-bounce');
+    void icon.getBoundingClientRect();
     icon.classList.add('is-bounce');
     clearTimeout(icon.__bounceTimer);
     icon.__bounceTimer = setTimeout(() => {
