@@ -152,6 +152,14 @@ document.addEventListener('click', (e) => {
 
 let tabDrag = null;
 
+function getTabDragBounds() {
+  const tabs = [...tabbar.querySelectorAll('.tab')];
+  if (!tabs.length) return { minX: 0, maxX: 0 };
+  const barRect = tabbar.getBoundingClientRect();
+  const toX = (tab) => tab.getBoundingClientRect().left - barRect.left - tabbar.clientLeft;
+  return { minX: toX(tabs[0]), maxX: toX(tabs[tabs.length - 1]) };
+}
+
 tabbar.addEventListener('pointerdown', (e) => {
   if (e.pointerType === 'mouse' && e.button !== 0) return;
   const active = e.target.closest('.tab[aria-selected="true"]');
@@ -178,10 +186,12 @@ tabbar.addEventListener('pointermove', (e) => {
   tabDrag.moved = true;
   const indicator = tabbar.querySelector('.tab-indicator');
   if (!indicator) return;
+  const bounds = getTabDragBounds();
+  const x = Math.min(Math.max(tabDrag.x + dx, bounds.minX), bounds.maxX);
   const squeeze = Math.min(Math.abs(dx) / 2600, .04);
   indicator.style.transition = 'none';
   indicator.style.transform =
-    `translate3d(${tabDrag.x + dx}px, ${tabDrag.y}px, 0) ` +
+    `translate3d(${x}px, ${tabDrag.y}px, 0) ` +
     `scaleX(${1 + squeeze}) scaleY(${1 - squeeze})`;
 });
 
@@ -195,7 +205,9 @@ function endTabDrag(e) {
   setTimeout(() => { suppressTabClick = false; }, 0);
 
   const dx = e.clientX - drag.startX;
-  const dragCenter = drag.x + drag.width / 2 + dx;
+  const bounds = getTabDragBounds();
+  const x = Math.min(Math.max(drag.x + dx, bounds.minX), bounds.maxX);
+  const dragCenter = x + drag.width / 2;
   const target = TABS.reduce((best, tab) => {
     const rect = tabbar.querySelector(`[data-tab="${tab.id}"]`).getBoundingClientRect();
     const center = rect.left + rect.width / 2;
@@ -203,7 +215,7 @@ function endTabDrag(e) {
     return distance < best.distance ? { tab, distance } : best;
   }, { tab: current, distance: Number.POSITIVE_INFINITY }).tab;
 
-  const fromPoint = { x: drag.x + dx, y: drag.y };
+  const fromPoint = { x, y: drag.y };
   if (target.id === current.id) {
     updateTabs({ animate: true, fromPoint });
   } else {
