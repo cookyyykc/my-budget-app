@@ -14,6 +14,7 @@ const main = document.getElementById('main');
 const tabbar = document.getElementById('tabbar');
 
 let current = TABS[0];
+let suppressTabClick = false;
 
 function mountTabs() {
   tabbar.setAttribute('role', 'tablist');
@@ -38,9 +39,9 @@ function syncTabIndicator() {
   indicator.style.transform = `translate3d(${x}px, ${y}px, 0)`;
 }
 
-function updateTabs({ animate = false, previousTab = null } = {}) {
+function updateTabs({ animate = false, previousTab = null, fromPoint = null } = {}) {
   const indicator = tabbar.querySelector('.tab-indicator');
-  const fromTab = animate ? previousTab : null;
+  const fromTab = animate && !fromPoint ? previousTab : null;
   const fromRect = fromTab?.isConnected ? fromTab.getBoundingClientRect() : null;
   const fromBarRect = fromTab?.isConnected ? tabbar.getBoundingClientRect() : null;
   tabbar.querySelectorAll('.tab').forEach((tab) => {
@@ -56,9 +57,13 @@ function updateTabs({ animate = false, previousTab = null } = {}) {
   indicator.style.width = `${rect.width}px`;
   indicator.style.height = `${rect.height}px`;
 
-  if (animate && fromRect && fromBarRect) {
-    const fromX = fromRect.left - fromBarRect.left - tabbar.clientLeft;
-    const fromY = fromRect.top - fromBarRect.top - tabbar.clientTop;
+  if (animate && (fromRect || fromPoint)) {
+    const fromX = fromPoint
+      ? fromPoint.x
+      : fromRect.left - fromBarRect.left - tabbar.clientLeft;
+    const fromY = fromPoint
+      ? fromPoint.y
+      : fromRect.top - fromBarRect.top - tabbar.clientTop;
     if (typeof indicator.animate === 'function') {
       indicator.getAnimations?.().forEach((animation) => animation.cancel());
       indicator.animate(
@@ -96,19 +101,23 @@ function updateTabs({ animate = false, previousTab = null } = {}) {
   }
 }
 
-function render({ animate = false, previousTab = null } = {}) {
+function render({ animate = false, previousTab = null, fromPoint = null } = {}) {
   const apply = () => {
     setActiveView(current.view);
     main.classList.toggle('is-record', current.id === 'record');
     main.innerHTML = current.view.html();
     current.view.mount(main);
-    updateTabs({ animate, previousTab });
+    updateTabs({ animate, previousTab, fromPoint });
     window.scrollTo(0, 0);
   };
   apply();
 }
 
 tabbar.addEventListener('click', (e) => {
+  if (suppressTabClick) {
+    suppressTabClick = false;
+    return;
+  }
   const id = e.target.closest('[data-tab]')?.dataset.tab;
   if (!id || id === current.id) return;
   const previousTab = tabbar.querySelector('.tab[aria-selected="true"]');
@@ -140,6 +149,71 @@ document.addEventListener('click', (e) => {
   };
   apply();
 });
+
+let tabDrag = null;
+
+tabbar.addEventListener('pointerdown', (e) => {
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  const active = e.target.closest('.tab[aria-selected="true"]');
+  if (!active) return;
+  const barRect = tabbar.getBoundingClientRect();
+  const rect = active.getBoundingClientRect();
+  tabDrag = {
+    pointerId: e.pointerId,
+    startX: e.clientX,
+    startY: e.clientY,
+    x: rect.left - barRect.left - tabbar.clientLeft,
+    y: rect.top - barRect.top - tabbar.clientTop,
+    width: rect.width,
+    moved: false
+  };
+  try { tabbar.setPointerCapture(e.pointerId); } catch (_) {}
+  tabbar.classList.add('is-tab-dragging');
+});
+
+tabbar.addEventListener('pointermove', (e) => {
+  if (!tabDrag || e.pointerId !== tabDrag.pointerId) return;
+  const dx = e.clientX - tabDrag.startX;
+  if (Math.abs(dx) < 5) return;
+  tabDrag.moved = true;
+  const indicator = tabbar.querySelector('.tab-indicator');
+  if (!indicator) return;
+  const squeeze = Math.min(Math.abs(dx) / 2600, .04);
+  indicator.style.transition = 'none';
+  indicator.style.transform =
+    `translate3d(${tabDrag.x + dx}px, ${tabDrag.y}px, 0) ` +
+    `scaleX(${1 + squeeze}) scaleY(${1 - squeeze})`;
+});
+
+function endTabDrag(e) {
+  if (!tabDrag || e.pointerId !== tabDrag.pointerId) return;
+  const drag = tabDrag;
+  tabDrag = null;
+  tabbar.classList.remove('is-tab-dragging');
+  if (!drag.moved) return;
+  suppressTabClick = true;
+  setTimeout(() => { suppressTabClick = false; }, 0);
+
+  const dx = e.clientX - drag.startX;
+  const dragCenter = drag.x + drag.width / 2 + dx;
+  const target = TABS.reduce((best, tab) => {
+    const rect = tabbar.querySelector(`[data-tab="${tab.id}"]`).getBoundingClientRect();
+    const center = rect.left + rect.width / 2;
+    const distance = Math.abs(center - dragCenter);
+    return distance < best.distance ? { tab, distance } : best;
+  }, { tab: current, distance: Number.POSITIVE_INFINITY }).tab;
+
+  const fromPoint = { x: drag.x + dx, y: drag.y };
+  if (target.id === current.id) {
+    updateTabs({ animate: true, fromPoint });
+  } else {
+    current = target;
+    render({ animate: true, fromPoint });
+  }
+}
+
+tabbar.addEventListener('pointerup', endTabDrag);
+tabbar.addEventListener('pointercancel', endTabDrag);
 
 // 物理键盘：在记账页也能直接敲数字
 document.addEventListener('keydown', (e) => {

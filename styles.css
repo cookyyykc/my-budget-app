@@ -1020,6 +1020,15 @@ table.data tfoot tr + tr td { border-top: 1px solid var(--line); padding-top: va
 .tab span { font-size: clamp(12px, 1em, 16px); line-height: 1.15; }
 .tab:active { transform: scale(.94); }
 .tab[aria-selected="true"] { color: var(--safe); }
+.tab[aria-selected="true"] {
+  cursor: grab;
+  touch-action: none;
+}
+.tabbar.is-tab-dragging {
+  cursor: grabbing;
+  user-select: none;
+  -webkit-user-select: none;
+}
 .tab[aria-selected="true"] svg {
   transform: translateY(-2px) scale(1.08);
 }
