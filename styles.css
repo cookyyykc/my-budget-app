@@ -208,6 +208,7 @@ button { cursor: pointer; border: 0; background: none; padding: 0; min-height: 4
   display: flex;
   flex-direction: column;
 }
+.app.is-record { height: 100%; }
 
 .main {
   flex: 1;
@@ -216,7 +217,16 @@ button { cursor: pointer; border: 0; background: none; padding: 0; min-height: 4
   outline: none;
 }
 .main.is-record {
-  padding-bottom: calc(var(--tabbar-h) + var(--keypad-h) + 10px + env(safe-area-inset-bottom));
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+  padding-bottom: calc(var(--tabbar-h) + var(--keypad-h) + var(--dock-gap) + 8px + env(safe-area-inset-bottom));
+}
+
+@supports (height: 100svh) {
+  .main.is-record { height: 100svh; }
 }
 
 .screen { padding: 0 var(--sp-4) var(--sp-6); }
@@ -352,7 +362,13 @@ html[data-theme="dark"] .strip { border-bottom-color: transparent; }
    记账页
    ============================================================ */
 
-.rec-body { padding: 0 var(--sp-4); }
+.rec-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0 var(--sp-4);
+}
 
 .amount-row {
   display: flex;
@@ -404,6 +420,10 @@ html[data-theme="dark"] .strip { border-bottom-color: transparent; }
 .cat-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
+  flex: 1;
+  min-height: 0;
+  align-content: center;
+  grid-auto-rows: minmax(0, auto);
   gap: var(--sp-2) var(--sp-2);
 }
 .cat {
@@ -436,12 +456,14 @@ html[data-theme="dark"] .strip { border-bottom-color: transparent; }
 .cat:active .ic { transform: scale(.94); }
 
 .meal-chips {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: var(--sp-2);
-  margin-top: var(--sp-4);
+  margin-top: 12px;
+  flex: none;
 }
 .chip {
-  flex: 1;
+  width: 100%;
   padding: 7px 4px;
   border-radius: var(--r-pill);
   background: var(--surface);
@@ -456,7 +478,8 @@ html[data-theme="dark"] .strip { border-bottom-color: transparent; }
 .meta-row {
   display: flex;
   gap: var(--sp-2);
-  margin-top: var(--sp-4);
+  margin-top: 12px;
+  flex: none;
 }
 .meta-btn {
   flex: 1;

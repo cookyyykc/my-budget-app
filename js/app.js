@@ -12,6 +12,7 @@ const TABS = [
 
 const main = document.getElementById('main');
 const tabbar = document.getElementById('tabbar');
+const app = document.getElementById('app');
 
 let current = TABS[0];
 let suppressTabClick = false;
@@ -104,6 +105,7 @@ function updateTabs({ animate = false, previousTab = null, fromPoint = null } = 
 function render({ animate = false, previousTab = null, fromPoint = null } = {}) {
   const apply = () => {
     setActiveView(current.view);
+    app.classList.toggle('is-record', current.id === 'record');
     main.classList.toggle('is-record', current.id === 'record');
     main.innerHTML = current.view.html();
     current.view.mount(main);
