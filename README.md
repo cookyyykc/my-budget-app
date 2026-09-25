@@ -11,7 +11,7 @@
 
 [在线体验](https://cookyyykc.github.io/my-budget-app/) · [功能](#功能) · [快速开始](#快速开始) · [项目结构](#项目结构) · [路线图](#路线图)
 
-![大学记账首页](<screenshots/1-记账.png>)
+![大学记账首页](<screenshots/1-记账.png?v=2>)
 
 </div>
 
@@ -38,15 +38,15 @@
 
 | 记账 | 统计 |
 | --- | --- |
-| ![记账页](<screenshots/1-记账.png>) | ![统计页](<screenshots/2-统计.png>) |
+| ![记账页](<screenshots/1-记账.png?v=2>) | ![统计页](<screenshots/2-统计.png?v=2>) |
 
 | 明细与编辑 | 三餐预算 |
 | --- | --- |
-| ![明细页](<screenshots/5-明细.png>) | ![三餐预算](<screenshots/10-三餐子预算.png>) |
+| ![明细页](<screenshots/5-明细.png?v=2>) | ![三餐预算](<screenshots/10-三餐子预算.png?v=2>) |
 
 | 数据保护 | 深色模式 |
 | --- | --- |
-| ![数据保护](<screenshots/8-数据保护.png>) | ![深色模式](<screenshots/4-深色模式.png>) |
+| ![数据保护](<screenshots/8-数据保护.png?v=2>) | ![深色模式](<screenshots/4-深色模式.png?v=2>) |
 
 ## 快速开始
 
