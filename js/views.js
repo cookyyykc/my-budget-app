@@ -126,7 +126,7 @@ export const recordView = {
           <button class="amount-back" type="button" data-key="back" aria-label="退格">${icon('back', 20)}</button>
         </div>
 
-        <div style="display:flex;justify-content:center;margin-bottom:16px">
+        <div style="display:flex;justify-content:center;margin-bottom:10px">
           <div class="seg" role="tablist" aria-label="收支类型">
             <button type="button" role="tab" data-type="expense" aria-selected="${rec.type === 'expense'}">支出</button>
             <button type="button" role="tab" data-type="income" aria-selected="${rec.type === 'income'}">收入</button>

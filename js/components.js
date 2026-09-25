@@ -216,7 +216,7 @@ export function budgetStrip(st, dots) {
         <span>剩余 <b class="num">${fen.yuan(Math.max(0, st.remaining))}</b></span>
         <span>${daily}${runOut}</span>
       </div>
-      ${dots ? `<div style="margin-top:10px" class="meal-dots" role="group" aria-label="今日三餐记录情况，未记的可点一下补记">
+      ${dots ? `<div style="margin-top:6px" class="meal-dots" role="group" aria-label="今日三餐记录情况，未记的可点一下补记">
         ${dots.map((m) => `<button class="meal-dot ${m.done ? 'is-done' : ''}" type="button"
             data-fill-meal="${m.id}"
             aria-label="${m.done ? `${m.name}已记` : `补记${m.name}`}">

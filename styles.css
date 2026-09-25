@@ -56,7 +56,8 @@
   --sp-6: 28px;
   --sp-7: 40px;
 
-  --fs-display: 46px;
+  --fs-display: clamp(34px, 5.4vh, 46px);
+  --fs-display: clamp(34px, 5.4svh, 46px);
   --fs-h1: 22px;
   --fs-h2: 17px;
   --fs-body: 15px;
@@ -68,7 +69,9 @@
   --num: ui-monospace, "SF Mono", "SF Pro Text", var(--font);
 
   --tabbar-h: 80px;
-  --keypad-h: 228px;
+  --key-row: clamp(42px, 5.6vh, 48px);
+  --key-row: clamp(42px, 5.6svh, 48px);
+  --keypad-h: calc(var(--key-row) * 4 + 36px);
   /* 底部玻璃底座：数字键盘与导航条共用同一套材质 */
   --dock-inset: 12px;
   --dock-gap: 8px;
@@ -213,7 +216,7 @@ button { cursor: pointer; border: 0; background: none; padding: 0; min-height: 4
   outline: none;
 }
 .main.is-record {
-  padding-bottom: calc(var(--tabbar-h) + var(--keypad-h) + 16px + env(safe-area-inset-bottom));
+  padding-bottom: calc(var(--tabbar-h) + var(--keypad-h) + 10px + env(safe-area-inset-bottom));
 }
 
 .screen { padding: 0 var(--sp-4) var(--sp-6); }
@@ -268,7 +271,7 @@ button { cursor: pointer; border: 0; background: none; padding: 0; min-height: 4
   backdrop-filter: saturate(1.4) blur(14px);
   -webkit-backdrop-filter: saturate(1.4) blur(14px);
   border-bottom: 1px solid var(--line);
-  padding: var(--sp-3) var(--sp-4) var(--sp-3);
+  padding: 8px var(--sp-4);
 }
 .strip[data-state="over"] { background: color-mix(in srgb, var(--over) 10%, var(--paper)); }
 
@@ -277,7 +280,7 @@ button { cursor: pointer; border: 0; background: none; padding: 0; min-height: 4
   align-items: baseline;
   justify-content: space-between;
   gap: var(--sp-3);
-  margin-bottom: var(--sp-2);
+  margin-bottom: 6px;
 }
 .strip-label { font-size: var(--fs-sub); color: var(--ink-2); }
 .strip-label strong { color: var(--ink); font-weight: 600; }
@@ -289,7 +292,7 @@ button { cursor: pointer; border: 0; background: none; padding: 0; min-height: 4
 
 .bar {
   position: relative;
-  height: 10px;
+  height: 8px;
   border-radius: var(--r-pill);
   background: var(--paper-2);
   overflow: hidden;
@@ -311,7 +314,7 @@ button { cursor: pointer; border: 0; background: none; padding: 0; min-height: 4
 .strip-foot {
   display: flex;
   gap: var(--sp-4);
-  margin-top: var(--sp-2);
+  margin-top: 6px;
   font-size: var(--fs-micro);
   color: var(--ink-2);
 }
@@ -326,8 +329,8 @@ button { cursor: pointer; border: 0; background: none; padding: 0; min-height: 4
   gap: 5px;
   font-size: var(--fs-micro);
   color: var(--ink-3);
-  min-height: 44px;
-  padding: 8px 7px;
+  min-height: 30px;
+  padding: 4px 6px;
   margin: 0 -3px;
   border-radius: var(--r-pill);
   transition: background .15s var(--ease-out), color .15s var(--ease-out);
@@ -352,9 +355,9 @@ button { cursor: pointer; border: 0; background: none; padding: 0; min-height: 4
   align-items: baseline;
   justify-content: flex-end;
   gap: var(--sp-2);
-  padding: var(--sp-5) 0 var(--sp-4);
+  padding: 10px 0 8px;
   border-bottom: 2px solid var(--ink);
-  margin-bottom: var(--sp-4);
+  margin-bottom: 12px;
 }
 .amount-cur { font-size: 24px; font-weight: 500; color: var(--ink-3); }
 .amount {
@@ -363,9 +366,9 @@ button { cursor: pointer; border: 0; background: none; padding: 0; min-height: 4
   font-weight: 620;
   letter-spacing: -.02em;
   line-height: 1;
-  min-height: 46px;
+  min-height: 40px;
 }
-.amount.is-empty { color: var(--ink-3); font-size: 34px; }
+.amount.is-empty { color: var(--ink-3); font-size: 30px; }
 .amount-back {
   margin-left: var(--sp-2);
   width: 44px; height: 44px;
@@ -384,8 +387,8 @@ button { cursor: pointer; border: 0; background: none; padding: 0; min-height: 4
   gap: 2px;
 }
 .seg button {
-  min-height: 44px;
-  padding: 8px 16px;
+  min-height: 38px;
+  padding: 6px 15px;
   border-radius: var(--r-pill);
   font-size: var(--fs-sub);
   font-weight: 600;
@@ -411,7 +414,8 @@ button { cursor: pointer; border: 0; background: none; padding: 0; min-height: 4
   transition: background .18s var(--ease-out), color .18s var(--ease-out), transform .18s var(--ease-spring);
 }
 .cat .ic {
-  width: 40px; height: 40px;
+  width: clamp(30px, 4.4vh, 36px); height: clamp(30px, 4.4vh, 36px);
+  width: clamp(30px, 4.4svh, 36px); height: clamp(30px, 4.4svh, 36px);
   border-radius: var(--r-sm);
   display: grid; place-items: center;
   background: var(--surface);
@@ -434,7 +438,7 @@ button { cursor: pointer; border: 0; background: none; padding: 0; min-height: 4
 }
 .chip {
   flex: 1;
-  padding: 9px 4px;
+  padding: 7px 4px;
   border-radius: var(--r-pill);
   background: var(--surface);
   color: var(--ink-2);
@@ -455,8 +459,8 @@ button { cursor: pointer; border: 0; background: none; padding: 0; min-height: 4
   display: flex;
   align-items: center;
   gap: 6px;
-  min-height: 44px;
-  padding: 10px var(--sp-3);
+  min-height: 40px;
+  padding: 8px var(--sp-3);
   border-radius: var(--r-sm);
   background: var(--surface-sunk);
   color: var(--ink-2);
@@ -527,13 +531,13 @@ html[data-online="false"] .offline-badge { display: block; }
   isolation: isolate;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  grid-auto-rows: 48px;
+  grid-auto-rows: var(--key-row);
   gap: 6px;
 }
 .keypad[hidden] { display: none; }
 .key {
-  height: 48px;
-  min-height: 48px;
+  height: var(--key-row);
+  min-height: var(--key-row);
   padding: 4px;
   line-height: 1;
   overflow: visible;
@@ -580,6 +584,50 @@ html[data-online="false"] .offline-badge { display: block; }
 .key--save:active { background: color-mix(in srgb, var(--ink) 88%, var(--paper)); }
 .key--save small { font-family: var(--num); font-size: 11px; font-weight: 500; opacity: .68; }
 
+
+/* 短屏手机：进一步收紧记账页，保证餐次和备注一屏可见、无需上下滑动 */
+@media (max-height: 779px) {
+  .strip { padding: 6px var(--sp-4); }
+  .amount-row { padding: 8px 0 6px; margin-bottom: 10px; }
+  .amount { font-size: 36px; min-height: 36px; }
+  .amount.is-empty { font-size: 27px; }
+  .amount-back { width: 38px; height: 38px; }
+  .cat { padding: 5px 2px 3px; }
+  .cat .ic { width: 27px; height: 27px; }
+  .chip { min-height: 32px; }
+  .meal-dot { min-height: 24px; }
+  .meal-chips, .meta-row { margin-top: 8px; }
+}
+
+@media (max-height: 680px) {
+  :root { --key-row: 38px; }
+  .strip { padding: 5px var(--sp-4); }
+  .strip .meal-dots { display: none; }
+  .amount-row { padding: 5px 0 4px; margin-bottom: 8px; }
+  .amount { font-size: 30px; min-height: 30px; }
+  .amount.is-empty { font-size: 24px; }
+  .cat { padding: 5px 2px 3px; }
+  .cat .ic { width: 24px; height: 24px; }
+  .seg button { min-height: 32px; }
+  .meta-btn { min-height: 34px; padding: 5px 8px; }
+  .chip { min-height: 28px; padding: 5px 4px; }
+}
+
+@media (max-height: 600px) {
+  :root { --key-row: 30px; }
+  .strip { padding: 4px var(--sp-4); }
+  .strip-top { margin-bottom: 4px; }
+  .strip-foot { margin-top: 4px; }
+  .amount-row { padding: 4px 0 3px; margin-bottom: 6px; }
+  .amount { font-size: 24px; min-height: 24px; }
+  .amount.is-empty { font-size: 20px; }
+  .cat { padding: 3px 2px 2px; }
+  .cat .ic { width: 18px; height: 18px; }
+  .seg button { min-height: 28px; }
+  .meal-chips, .meta-row { margin-top: 6px; }
+  .meta-btn { min-height: 28px; }
+  .chip { min-height: 24px; }
+}
 /* 横屏时把键盘移到右侧，避免固定键盘遮住备注和时间。 */
 @media (orientation: landscape) and (max-height: 500px) {
   .main.is-record {
