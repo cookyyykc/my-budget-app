@@ -1314,9 +1314,16 @@ main.is-transitioning { pointer-events: none; }
 }
 
 /* ============================================================
-   iOS 27 液态玻璃 · 底部标签栏（方案 B）
-   数值来自 Apple 官方 iOS 27 Figma Kit 27.0.2 实测。
+   iOS 27 液态玻璃 · 底部标签栏（方案 C 调校版）
+   材质数值：Apple 官方 iOS 27 Figma Kit 27.0.2 实测（与方案 B 同一套公式）。
+   真折射：hyalite v0.5.0（MIT，js/hyalite.js + js/ios27-tabbar-hyalite.js）。
+
    只换材质：70px 高度、圆角、滑动/回弹动画、拖拽范围一律不动。
+   深色模式胶囊继续用原来的淡绿色，只换质感。
+
+   backdrop-filter 的写法：Chromium 上 hyalite 会写入 --hyalite（url(#…)），
+   拿到真折射 + 边缘色散；Safari / Firefox 拿不到，自动用 var() 的第二个
+   参数 blur(...)，也就是方案 B 的材质。两种情况都是合法的 filter 列表。
    ============================================================ */
 
 .tabbar {
@@ -1341,8 +1348,9 @@ main.is-transitioning { pointer-events: none; }
     calc(var(--ios27-glass-alpha) * (1.6 - 1.1 * var(--ios27-glass-transparency)))
   );
   background-image: none;
-  backdrop-filter: blur(calc(12px * (.5 + .8 * var(--ios27-glass-transparency)))) saturate(1.8);
-  -webkit-backdrop-filter: blur(calc(12px * (.5 + .8 * var(--ios27-glass-transparency)))) saturate(1.8);
+  /* saturate 必须写在 var() 外面，两种取值才是同一条合法的 filter 列表 */
+  backdrop-filter: var(--hyalite, blur(calc(12px * (.5 + .8 * var(--ios27-glass-transparency))))) saturate(1.8);
+  -webkit-backdrop-filter: var(--hyalite, blur(calc(12px * (.5 + .8 * var(--ios27-glass-transparency))))) saturate(1.8);
   /* 四层阴影缺一不可：投影 + 浅灰环 + 上内阴影 + 下内阴影 */
   box-shadow:
     var(--ios27-glass-shadow),

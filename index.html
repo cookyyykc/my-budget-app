@@ -19,7 +19,7 @@
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
 <link rel="icon" href="icons/icon-192.png" sizes="192x192" />
-<link rel="stylesheet" href="styles.css?v=27" />
+<link rel="stylesheet" href="styles.css?v=28" />
 </head>
 
 <body>
@@ -34,6 +34,9 @@
   <div class="offline-badge" aria-live="polite">离线 · 可继续记账</div>
   <div id="toast-root" class="toast-root" role="status" aria-live="polite"></div>
 
+  <!-- iOS 27 液态玻璃（方案 C 调校版）：Chromium 上真折射，Safari 自动回退成纯材质 -->
+  <script src="js/hyalite.js?v=1"></script>
+  <script src="js/ios27-tabbar-hyalite.js?v=1"></script>
   <script type="module" src="js/app.js?v=29"></script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 // 离线可用：把界面资源缓存起来，断网也能记账。
-const CACHE = 'ubudget-v35';
+const CACHE = 'ubudget-v36';
 const ASSETS = [
   './',
   './index.html',
@@ -11,6 +11,8 @@ const ASSETS = [
   './js/store.js',
   './js/sync-queue.js',
   './js/format.js',
+  './js/hyalite.js',
+  './js/ios27-tabbar-hyalite.js',
   './icons/icon-192.png',
   './icons/apple-touch-icon.png',
 ];
