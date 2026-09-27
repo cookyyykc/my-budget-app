@@ -370,7 +370,6 @@ function openMeta(kind, root) {
           // 再点一次取消：清空备注框（和标签的开关行为保持一致）
           input.value = input.value.trim() === note ? '' : note;
           syncPresets();
-          input.focus();
         });
         input.addEventListener('input', syncPresets);
         el.querySelector('[aria-label="标签"]').addEventListener('click', (event) => {
