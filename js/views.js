@@ -78,6 +78,21 @@ function tagSuggestions() {
   return [...new Set([...counts.keys(), ...BASE_TAGS])].slice(0, 14);
 }
 
+/** 标签与备注框联动：选中就把标签文字写进备注，取消就摘掉，不动用户自己写的字。 */
+function toggleTagInNote(value, tag, on) {
+  const words = String(value || '').trim().split(/\s+/).filter(Boolean);
+  const at = words.indexOf(tag);
+  if (on) { if (at < 0) words.push(tag); }
+  else if (at >= 0) words.splice(at, 1);
+  return words.join(' ');
+}
+
+/** 已经写进备注里的标签不再重复显示（明细行、记账页备注按钮共用）。 */
+function tagsOutsideNote(record) {
+  const note = record.note || '';
+  return (record.tags || []).filter((tag) => !note.includes(tag));
+}
+
 // ================================================================ 记账
 const rec = {
   type: 'expense',
@@ -115,7 +130,8 @@ export const recordView = {
     const amountText = rec.amount ? fen.format(fen.fromYuan(rec.amount)) : '0.00';
     const account = ACCOUNTS.find((a) => a.id === rec.accountId);
     const activeCat = catById(rec.categoryId);
-    const noteLabel = rec.note || rec.tags.map((tag) => `#${tag}`).join(' ');
+    const noteLabel = [rec.note, ...tagsOutsideNote(rec).map((tag) => `#${tag}`)]
+      .filter(Boolean).join(' ');
 
     return `
       ${budgetStrip(st, dots)}
@@ -345,10 +361,14 @@ function openMeta(kind, root) {
         const syncPresets = () => presetButtons.forEach((button) => {
           button.setAttribute('aria-pressed', String(button.dataset.commonNote === input.value.trim()));
         });
-        el.querySelector('.note-preset-list')?.addEventListener('click', (event) => {
+        // 弹层里有两个 .note-preset-list（标签在前、常用备注在后），
+        // querySelector 只会取到第一个，所以这里必须按 aria-label 精确定位。
+        el.querySelector('[aria-label="常用备注"]')?.addEventListener('click', (event) => {
           const button = event.target.closest('[data-common-note]');
           if (!button) return;
-          input.value = button.dataset.commonNote;
+          const note = button.dataset.commonNote;
+          // 再点一次取消：清空备注框（和标签的开关行为保持一致）
+          input.value = input.value.trim() === note ? '' : note;
           syncPresets();
           input.focus();
         });
@@ -361,6 +381,9 @@ function openMeta(kind, root) {
           if (selected.has(tag)) selected.delete(tag); else selected.add(tag);
           rec.tags = [...selected];
           button.setAttribute('aria-pressed', String(selected.has(tag)));
+          // 选中的标签同时写进备注框，让用户直接看到自己选了什么
+          input.value = toggleTagInNote(input.value, tag, selected.has(tag));
+          syncPresets();
         });
         el.querySelector('[data-ok]').addEventListener('click', () => {
           rec.note = input.value.trim();
@@ -472,7 +495,7 @@ export const ledgerView = {
               ${list.map((r) => {
                 const c = catById(r.categoryId);
                 const m = mealById(r.mealType);
-                const tagText = (r.tags || []).map((tag) => `#${tag}`).join(' ');
+                const tagText = tagsOutsideNote(r).map((tag) => `#${tag}`).join(' ');
                 const sub = [r.time, m?.name, r.note, tagText, r.type === 'income' ? '收入' : null]
                   .filter(Boolean).join(' · ');
                 return `<button class="ledger-row" type="button" data-rec="${r.id}">
@@ -613,6 +636,12 @@ function openRecord(id, root) {
         if (selected.has(tag)) selected.delete(tag); else selected.add(tag);
         draft.tags = [...selected];
         tagBtn.setAttribute('aria-pressed', String(selected.has(tag)));
+        // 和记账页一致：选中的标签同时写进备注框
+        const noteInput = el.querySelector('#e-note');
+        if (noteInput) {
+          noteInput.value = toggleTagInNote(noteInput.value, tag, selected.has(tag));
+          draft.note = noteInput.value;
+        }
       });
       const repaint = () => {
         capture();

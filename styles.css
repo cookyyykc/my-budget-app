@@ -1410,3 +1410,155 @@ html[data-theme="dark"] .tab-indicator {
   .tabbar,
   .tabbar[class] { --ios27-glass-transparency: 0; }
 }
+
+/* ============================================================
+   旧内核兜底：不支持 color-mix() 的浏览器
+   ------------------------------------------------------------
+   部分安卓系统浏览器内核偏旧（实测小米浏览器 = Chrome/109），不认
+   color-mix()。注意它的失败方式和「不支持就跳过」不同：声明会被保留，
+   但在计算时报废（invalid at computed-value time），整条属性被置为
+   初始值 —— 于是选中胶囊变透明、餐盘柱状图没颜色、按钮丢描边。
+   这里用等价的纯色把这些声明重写一遍。支持 color-mix() 的浏览器
+   （iOS 16.2+ / Chrome 111+ / Edge 111+）整块跳过，显示效果与之前完全一致。
+   数值由 16% / 34% / 70% 等混合比例直接算出，改了调色板记得同步。
+   ============================================================ */
+@supports not (background: color-mix(in srgb, red 16%, blue)) {
+  /* 兜底色板 · 浅色 */
+  :root {
+    --fb-dock-bg:       rgba(236, 238, 232, .78);
+    --fb-dock-edge:     rgba(203, 208, 198, .7);
+    --fb-dock-hi:       rgba(255, 255, 255, .55);
+    --fb-strip:         rgba(244, 245, 241, .88);
+    --fb-strip-over:    rgb(238, 224, 219);
+    --fb-bar-over:      rgb(226, 201, 195);
+    --fb-bar-stripe:    rgba(179, 34, 24, .62);
+    --fb-key-line:      rgba(225, 227, 220, .7);
+    --fb-key-save:      rgb(47, 51, 53);
+    --fb-danger-ring:   rgba(179, 34, 24, .4);
+    --fb-pill:          rgba(237, 237, 237, .92);
+    --fb-pill-ring:     rgba(219, 219, 219, 1);
+    --fb-pill-inner:    rgba(40, 40, 40, 1);
+    --fb-pill-shadow:   0 8px 15px rgba(0, 0, 0, .04);
+    --fb-tray-a:        rgba(179, 34, 24, .55);
+    --fb-tray-b:        rgba(179, 34, 24, .18);
+    --fb-nobud:         rgba(102, 112, 107, .22);
+    --fb-nobud-line:    rgba(102, 112, 107, .45);
+    --fb-forecast:      rgb(248, 242, 238);
+    --fb-forecast-line: rgb(212, 198, 182);
+    --fb-advice:        rgb(250, 241, 237);
+    --fb-handle:        rgba(20, 24, 27, .17);
+    --fb-foot:          rgba(244, 245, 241, 0);
+  }
+  /* 兜底色板 · 深色（跟随系统） */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --fb-dock-bg:       rgba(23, 27, 29, .78);
+      --fb-dock-edge:     rgba(58, 64, 66, .7);
+      --fb-dock-hi:       rgba(33, 38, 41, .55);
+      --fb-strip:         rgba(14, 17, 19, .88);
+      --fb-strip-over:    rgb(38, 28, 28);
+      --fb-bar-over:      rgb(65, 44, 44);
+      --fb-bar-stripe:    rgba(255, 123, 113, .62);
+      --fb-key-line:      rgba(42, 47, 49, .7);
+      --fb-key-save:      rgb(214, 216, 213);
+      --fb-danger-ring:   rgba(255, 123, 113, .4);
+      --fb-pill:          rgb(42, 60, 56);
+      --fb-pill-ring:     rgba(87, 177, 137, .34);
+      --fb-pill-inner:    rgba(255, 255, 255, .22);
+      --fb-pill-shadow:   0 8px 24px rgba(87, 177, 137, .16);
+      --fb-tray-a:        rgba(255, 123, 113, .55);
+      --fb-tray-b:        rgba(255, 123, 113, .18);
+      --fb-nobud:         rgba(157, 165, 161, .22);
+      --fb-nobud-line:    rgba(157, 165, 161, .45);
+      --fb-forecast:      rgb(46, 45, 44);
+      --fb-forecast-line: rgb(77, 65, 55);
+      --fb-advice:        rgb(48, 45, 43);
+      --fb-handle:        rgba(241, 243, 239, .17);
+      --fb-foot:          rgba(14, 17, 19, 0);
+    }
+  }
+  /* 兜底色板 · 深色（手动切换） */
+  html[data-theme="dark"] {
+    --fb-dock-bg:       rgba(23, 27, 29, .78);
+    --fb-dock-edge:     rgba(58, 64, 66, .7);
+    --fb-dock-hi:       rgba(33, 38, 41, .55);
+    --fb-strip:         rgba(14, 17, 19, .88);
+    --fb-strip-over:    rgb(38, 28, 28);
+    --fb-bar-over:      rgb(65, 44, 44);
+    --fb-bar-stripe:    rgba(255, 123, 113, .62);
+    --fb-key-line:      rgba(42, 47, 49, .7);
+    --fb-key-save:      rgb(214, 216, 213);
+    --fb-danger-ring:   rgba(255, 123, 113, .4);
+    --fb-pill:          rgb(42, 60, 56);
+    --fb-pill-ring:     rgba(87, 177, 137, .34);
+    --fb-pill-inner:    rgba(255, 255, 255, .22);
+    --fb-pill-shadow:   0 8px 24px rgba(87, 177, 137, .16);
+    --fb-tray-a:        rgba(255, 123, 113, .55);
+    --fb-tray-b:        rgba(255, 123, 113, .18);
+    --fb-nobud:         rgba(157, 165, 161, .22);
+    --fb-nobud-line:    rgba(157, 165, 161, .45);
+    --fb-forecast:      rgb(46, 45, 44);
+    --fb-forecast-line: rgb(77, 65, 55);
+    --fb-advice:        rgb(48, 45, 43);
+    --fb-handle:        rgba(241, 243, 239, .17);
+    --fb-foot:          rgba(14, 17, 19, 0);
+  }
+
+  /* 玻璃底座：数字键盘与导航条共用 */
+  :root {
+    --dock-bg:   var(--fb-dock-bg);
+    --dock-edge: var(--fb-dock-edge);
+    --dock-hi:   var(--fb-dock-hi);
+  }
+  /* 顶部预算条 */
+  .strip { background: var(--fb-strip); }
+  .strip[data-state="over"] { background: var(--fb-strip-over); }
+  /* 预算条超支斜纹 */
+  .bar.is-over { background: var(--fb-bar-over); }
+  .bar.is-over .bar-fill {
+    background: repeating-linear-gradient(-45deg, var(--over) 0 6px, var(--fb-bar-stripe) 6px 12px);
+  }
+  /* 数字键盘 */
+  .key { border-color: var(--fb-key-line); }
+  .key--save:active { background: var(--fb-key-save); }
+  /* 危险按钮的内描边 */
+  .btn--danger { box-shadow: inset 0 0 0 1px var(--fb-danger-ring); }
+  /* 选中胶囊：深色模式必须是淡绿色 */
+  .tab-indicator {
+    background: var(--fb-pill);
+    box-shadow:
+      0 0 0 .5px var(--fb-pill-ring),
+      inset 0 20px 8px -20px var(--fb-pill-inner),
+      var(--fb-pill-shadow);
+  }
+  /* 明细行图标底色：颜色来自 --cat，用伪元素 + opacity 还原 */
+  .ledger-ic { background: none; position: relative; }
+  .ledger-ic::before {
+    content: '';
+    position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+    border-radius: inherit;
+    background: var(--cat, var(--ink-3));
+    opacity: .12;
+  }
+  /* 餐盘柱状图填充：同上 */
+  .tray-fill { background: none; }
+  .tray-cell:not(.is-over):not(.is-nobudget) .tray-fill::before {
+    content: '';
+    position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+    background: var(--cat);
+    opacity: .32;
+  }
+  .tray-cell.is-over .tray-fill {
+    background: repeating-linear-gradient(-45deg, var(--fb-tray-a) 0 5px, var(--fb-tray-b) 5px 10px);
+  }
+  .tray-cell.is-nobudget .tray-fill {
+    background: var(--fb-nobud);
+    border-top-color: var(--fb-nobud-line);
+  }
+  /* 统计页卡片 */
+  .forecast { background: var(--fb-forecast); border-color: var(--fb-forecast-line); }
+  .advice { background: var(--fb-advice); }
+  /* 弹层 */
+  .sheet-handle { background: var(--fb-handle); }
+  .sheet-foot { background: linear-gradient(to bottom, var(--fb-foot), var(--paper) 24%); }
+}
