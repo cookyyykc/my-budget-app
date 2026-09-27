@@ -456,6 +456,11 @@ html[data-theme="dark"] .strip { border-bottom-color: transparent; }
   font-size: var(--fs-micro);
   transition: background .18s var(--ease-out), color .18s var(--ease-out), transform .18s var(--ease-spring);
 }
+.chip[data-meal="snack"]::after { content: " 🌚"; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .chip[data-meal="snack"]::after { content: " 🌝"; }
+}
+html[data-theme="dark"] .chip[data-meal="snack"]::after { content: " 🌝"; }
 .cat .ic {
   width: clamp(30px, 4.4vh, 36px); height: clamp(30px, 4.4vh, 36px);
   width: clamp(30px, 4.4svh, 36px); height: clamp(30px, 4.4svh, 36px);

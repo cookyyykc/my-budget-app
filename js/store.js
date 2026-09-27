@@ -34,7 +34,7 @@ export const MEALS = [
   { id: 'breakfast', name: '早餐', icon: 'sun',      color: 'var(--c-food)' },
   { id: 'lunch',     name: '午餐', icon: 'sunhigh',  color: 'var(--c-food)' },
   { id: 'dinner',    name: '晚餐', icon: 'moon',     color: 'var(--c-food)' },
-  { id: 'snack',     name: '零食', icon: 'star',     color: 'var(--c-food)' },
+  { id: 'snack',     name: '奖励', icon: 'star',     color: 'var(--c-food)' },
 ];
 
 export const ACCOUNTS = [
