@@ -6,6 +6,7 @@ import {
 } from './store.js';
 import { icon, toast, openSheet, closeSheet, confirmSheet, budgetStrip, tray, hbars } from './components.js';
 import { getQueueCount } from './sync-queue.js';
+import { pieChart, lineChart } from './charts.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -261,14 +262,17 @@ function rerenderRecord(root, direction = 0) {
   window.scrollTo(0, scrollY);
 
   const swap = root.querySelector('#seg-swap');
-  if (direction && swap && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    swap.animate(
-      [
-        { transform: `translateX(${direction * 16}px)`, opacity: .24 },
-        { transform: 'translateX(0)', opacity: 1 },
-      ],
-      { duration: 280, easing: 'cubic-bezier(.22, 1.36, .64, 1)' },
-    );
+  if (swap && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const keyframes = direction
+      ? [
+          { transform: `translateX(${direction * 16}px)`, opacity: .24 },
+          { transform: 'translateX(0)', opacity: 1 },
+        ]
+      : [{ opacity: 0 }, { opacity: 1 }];
+    swap.animate(keyframes, {
+      duration: 280,
+      easing: 'cubic-bezier(.22, 1.36, .64, 1)',
+    });
   }
 }
 
@@ -460,9 +464,10 @@ export const ledgerView = {
     return `
       ${monthNav()}
       <div class="screen">
-        <div class="search">
+        <div class="search${state.query ? ' has-value' : ''}">
           ${icon('search', 18)}
           <input type="search" id="q" placeholder="搜备注、标签或分类" value="${esc(state.query)}" aria-label="搜索流水" />
+          <button class="search-clear" type="button" aria-label="清空搜索">${icon('close', 16)}</button>
         </div>
         <div class="filters" role="group" aria-label="筛选">
           ${[['all', '全部'], ['food', '餐饮'], ['other', '其他花费'], ['income', '收入']].map(([k, n]) => `
@@ -522,6 +527,10 @@ export const ledgerView = {
         input?.focus();
         input?.setSelectionRange(pos, pos);
       });
+    });
+    root.querySelector('.search-clear')?.addEventListener('click', () => {
+      state.query = '';
+      rerenderPreserving(root, () => root.querySelector('#q')?.focus());
     });
     bind(root, (e) => {
       const backfill = e.target.closest('[data-backfill]')?.dataset.backfill;
@@ -805,6 +814,37 @@ export const statsView = {
         </div>
 
         <div class="section">
+          ${(() => {
+            // 环形图：调用后端提供的 getCategoryBreakdown
+            if (typeof store.getCategoryBreakdown !== 'function') {
+              return ''; // 后端接口未实现时不显示
+            }
+            const breakdown = store.getCategoryBreakdown(mk);
+            if (!breakdown || breakdown.total === 0) {
+              return `<div class="chart-container" style="margin-top:var(--sp-4)">
+                <div class="chart-empty" style="text-align:center;padding:var(--sp-5);color:var(--ink-3)">
+                  <p>本月还没有支出</p>
+                </div>
+              </div>`;
+            }
+            return `<div class="chart-container" style="margin-top:var(--sp-4)">
+              <div class="chart-pie-wrapper">
+                ${pieChart(breakdown, { size: 200, centerLabel: fen.compact(breakdown.total) })}
+              </div>
+              <div class="chart-legend">
+                ${breakdown.categories.map(cat => `
+                  <button class="chart-legend-item" type="button" data-chart-cat="${cat.id}">
+                    <span class="chart-legend-dot" style="background:${cat.color}"></span>
+                    <span class="chart-legend-label">${esc(cat.name)}</span>
+                    <span class="chart-legend-value">${fen.compact(cat.amount)} · ${cat.percent.toFixed(1)}%</span>
+                  </button>
+                `).join('')}
+              </div>
+            </div>`;
+          })()}
+        </div>
+
+        <div class="section">
           <div class="section-head"><h2>三餐对比</h2></div>
           <div class="card">${hbars(ms.rows)}</div>
         </div>
@@ -879,6 +919,25 @@ export const statsView = {
           <div class="section-head"><h2>${st.state === 'over' ? '怎么补救' : '本月进度'}</h2></div>
           <div class="advice">${advice(mk).map((l) => `<p style="margin:0 0 6px">${l}</p>`).join('')}</div>
         </div>
+
+        ${(() => {
+          // 折线图：调用后端提供的 getMonthlyTrend
+          if (typeof store.getMonthlyTrend !== 'function') {
+            return ''; // 后端接口未实现时不显示
+          }
+          const trend = store.getMonthlyTrend(6);
+          return `<div class="section">
+            <div class="section-head">
+              <h2>趋势</h2>
+              <span class="hint">最近 6 个月支出变化</span>
+            </div>
+            <div class="chart-container">
+              <div class="chart-line-wrapper">
+                ${lineChart(trend, { width: 600, height: 240 })}
+              </div>
+            </div>
+          </div>`;
+        })()}
       </div>`;
   },
 
@@ -906,7 +965,64 @@ export const statsView = {
         openCatList(root, `${catById(cat).name}的明细`, {
           categoryId: cat, used: row?.sum ?? 0, budget: row?.budget ?? 0,
         });
+        return;
       }
+
+      // 环形图图例点击：跳转到对应分类明细
+      const chartCat = e.target.closest('[data-chart-cat]')?.dataset.chartCat;
+      if (chartCat && typeof store.getCategoryBreakdown === 'function') {
+        const breakdown = store.getCategoryBreakdown(state.month);
+        const category = breakdown.categories.find(c => c.id === chartCat);
+        if (category) {
+          if (chartCat === 'food') {
+            // 餐饮分类：显示所有餐次的明细
+            openCatList(root, '餐饮的明细', {
+              categoryId: 'food', used: category.amount, budget: ms.budget,
+            });
+          } else {
+            // 其他分类
+            const row = os.rows.find((r) => r.id === chartCat);
+            openCatList(root, `${category.name}的明细`, {
+              categoryId: chartCat, used: category.amount, budget: row?.budget ?? 0,
+            });
+          }
+        }
+        return;
+      }
+
+      // 折线图数据点 hover 显示金额（使用 SVG title 元素）
+      const chartDot = e.target.closest('.chart-dot');
+      if (chartDot) {
+        const expense = parseInt(chartDot.dataset.expense);
+        const label = chartDot.dataset.label;
+        const month = chartDot.dataset.month;
+        // 点击数据点：切换到对应月份
+        if (month && month !== state.month) {
+          state.month = month;
+          rerender(root);
+          toast(`已切换到 ${label}`);
+        }
+      }
+    });
+
+    // 添加折线图数据点 hover 效果（显示 tooltip）
+    const chartDots = root.querySelectorAll('.chart-dot');
+    chartDots.forEach(dot => {
+      dot.addEventListener('mouseenter', () => {
+        const expense = parseInt(dot.dataset.expense);
+        const label = dot.dataset.label;
+        if (expense && label) {
+          // 在 SVG 中动态添加 title 元素
+          const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+          title.textContent = `${label}: ${fen.yuan(expense)}`;
+          dot.appendChild(title);
+        }
+      });
+      dot.addEventListener('mouseleave', () => {
+        // 移除 title 元素
+        const title = dot.querySelector('title');
+        if (title) title.remove();
+      });
     });
   },
 };

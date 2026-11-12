@@ -354,6 +354,33 @@ export const store = {
   isSeeded() { return !!state.settings.seeded; },
   recoveredFrom() { return recoveredFrom; },
 
+  /** 支出分类占比（环形图用）：餐饮 + 其他分类合并，按实际花费占比 */
+  getCategoryBreakdown(monthKey = d.monthKey()) {
+    const ms = mealStats(monthKey);
+    const os = otherStats(monthKey);
+    const total = ms.sum + os.sum;
+    const categories = [
+      { id: 'food', name: '餐饮', amount: ms.sum, color: 'var(--c-food)', percent: pct(ms.sum, total) },
+      ...os.rows.map((r) => ({ id: r.id, name: r.name, amount: r.sum, color: r.color, percent: pct(r.sum, total) })),
+    ].filter((c) => c.amount > 0);
+    return { total, categories };
+  },
+
+  /** 最近 N 个月支出趋势（折线图用） */
+  getMonthlyTrend(count = 6) {
+    const months = [];
+    for (let i = count - 1; i >= 0; i--) {
+      const mk = d.prevMonth(d.monthKey(), i);
+      const t = totals(mk);
+      months.push({
+        key: mk, label: monthLabelShort(mk),
+        expense: t.expense, income: t.income, budget: state.budget.total,
+      });
+    }
+    const maxValue = Math.max(0, ...months.map((m) => Math.max(m.expense, m.income, m.budget)));
+    return { months, maxValue };
+  },
+
   /** 申请持久化存储：让浏览器尽量不回收本站数据 */
   async requestPersistence() {
     try {

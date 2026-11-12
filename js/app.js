@@ -41,6 +41,7 @@ function syncTabIndicator() {
 }
 
 function updateTabs({ animate = false, previousTab = null, fromPoint = null } = {}) {
+  animate = animate && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const indicator = tabbar.querySelector('.tab-indicator');
   const fromTab = animate && !fromPoint ? previousTab : null;
   const fromRect = fromTab?.isConnected ? fromTab.getBoundingClientRect() : null;
@@ -161,6 +162,7 @@ function getTabDragBounds() {
 }
 
 tabbar.addEventListener('pointerdown', (e) => {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   if (e.pointerType === 'mouse' && e.button !== 0) return;
   const active = e.target.closest('.tab[aria-selected="true"]');
   if (!active) return;

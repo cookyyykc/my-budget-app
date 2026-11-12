@@ -71,6 +71,7 @@ function onSheetKey(e) { if (e.key === 'Escape') closeSheet(); }
 
 function bindSheetDrag(scrim, sheet) {
   const zone = sheet.querySelector('.sheet-drag-zone');
+  const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let active = false;
   let dragging = false;
   let startY = 0;
@@ -91,6 +92,12 @@ function bindSheetDrag(scrim, sheet) {
   zone.addEventListener('pointermove', (event) => {
     if (!active) return;
     const dy = event.clientY - startY;
+    if (prefersReducedMotion()) {
+      velocity = (event.clientY - lastY) / Math.max(1, performance.now() - lastTime);
+      lastY = event.clientY;
+      lastTime = performance.now();
+      return;
+    }
     if (!dragging && Math.abs(dy) < 7) return;
     if (!dragging) {
       dragging = true;
@@ -113,8 +120,18 @@ function bindSheetDrag(scrim, sheet) {
     if (!dragging) return;
     dragging = false;
     sheet.classList.remove('is-dragging');
-    const offset = sheet.getBoundingClientRect().top - sheet.parentElement.getBoundingClientRect().top;
+    const offset = prefersReducedMotion()
+      ? Math.max(0, event.clientY - startY)
+      : sheet.getBoundingClientRect().top - sheet.parentElement.getBoundingClientRect().top;
     const shouldClose = offset > 88 || velocity > .52;
+    if (prefersReducedMotion()) {
+      if (shouldClose) closeSheet();
+      else {
+        sheet.style.transform = '';
+        scrim.style.background = '';
+      }
+      return;
+    }
     if (shouldClose) {
       sheet.classList.add('is-settling');
       sheet.style.transform = 'translate3d(0, 110%, 0)';

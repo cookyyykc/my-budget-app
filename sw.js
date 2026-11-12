@@ -13,6 +13,7 @@ const ASSETS = [
   './js/store.js',
   './js/sync-queue.js',
   './js/format.js',
+  './js/charts.js',
   './js/hyalite.js',
   './js/ios27-tabbar-hyalite.js',
   './icons/icon-192.png',

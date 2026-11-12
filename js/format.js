@@ -70,9 +70,9 @@ export const d = {
     if (monthKey > cur) return d.daysInMonth(monthKey);
     return d.daysInMonth(monthKey) - today.getDate() + 1;
   },
-  prevMonth(monthKey) {
+  prevMonth(monthKey, offset = 1) {
     const [y, m] = monthKey.split('-').map(Number);
-    const dt = new Date(y, m - 2, 1);
+    const dt = new Date(y, m - 1 - offset, 1);
     return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`;
   },
   monthLabel(monthKey) {
