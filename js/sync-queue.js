@@ -2,9 +2,10 @@
 // 现在没有云后端；以后接云同步时，只需要把 backupActions 换成 API 上传。
 
 const DB_NAME = 'ubudget-queue';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const PENDING = 'pending-actions';
 const BACKUP = 'record-backup';
+const STATE_SNAPSHOT = 'state-snapshot';
 
 function req(request) {
   return new Promise((resolve, reject) => {
@@ -25,10 +26,16 @@ function openDB() {
   if (!('indexedDB' in window)) return Promise.reject(new Error('IndexedDB unsupported'));
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onupgradeneeded = () => {
+    request.onupgradeneeded = (event) => {
       const db = request.result;
-      if (!db.objectStoreNames.contains(PENDING)) db.createObjectStore(PENDING, { keyPath: 'id' });
-      if (!db.objectStoreNames.contains(BACKUP)) db.createObjectStore(BACKUP, { keyPath: 'id' });
+      const oldVersion = event.oldVersion;
+      if (oldVersion < 1) {
+        if (!db.objectStoreNames.contains(PENDING)) db.createObjectStore(PENDING, { keyPath: 'id' });
+        if (!db.objectStoreNames.contains(BACKUP)) db.createObjectStore(BACKUP, { keyPath: 'id' });
+      }
+      if (oldVersion < 2 && !db.objectStoreNames.contains(STATE_SNAPSHOT)) {
+        db.createObjectStore(STATE_SNAPSHOT, { keyPath: 'id' });
+      }
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
@@ -53,8 +60,20 @@ export async function queueRecordAction(op, record) {
     db.close();
     scheduleQueueSync();
     return true;
-  } catch {
+  } catch (err) {
+    console.warn('离线队列写入失败', err);
     return false;
+  }
+}
+
+export async function saveStateSnapshot(state) {
+  const db = await openDB();
+  try {
+    const tx = db.transaction(STATE_SNAPSHOT, 'readwrite');
+    tx.objectStore(STATE_SNAPSHOT).put({ id: 'current', state: structuredClone(state), updatedAt: new Date().toISOString() });
+    await txDone(tx);
+  } finally {
+    db.close();
   }
 }
 
@@ -64,7 +83,8 @@ export async function getQueueCount() {
     const count = await req(db.transaction(PENDING, 'readonly').objectStore(PENDING).count());
     db.close();
     return count;
-  } catch {
+  } catch (err) {
+    console.warn('离线队列读取失败', err);
     return 0;
   }
 }
@@ -107,7 +127,8 @@ export async function syncQueue() {
     const count = await flushPending();
     if (count) document.dispatchEvent(new CustomEvent('ubudget:queue-synced', { detail: { count } }));
     return count;
-  } catch {
+  } catch (err) {
+    console.warn('离线队列同步失败', err);
     return 0;
   } finally {
     syncing = false;
@@ -125,7 +146,8 @@ export async function registerBackgroundSync() {
     const registration = await navigator.serviceWorker.ready;
     await registration.sync.register('ubudget-queue');
     return true;
-  } catch {
+  } catch (err) {
+    console.warn('后台同步注册失败', err);
     return false;
   }
 }

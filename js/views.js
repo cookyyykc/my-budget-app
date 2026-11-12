@@ -39,8 +39,8 @@ function applyTheme() {
   document.documentElement.dataset.theme = theme;
   const dark = theme === 'dark' ||
     (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  document.querySelectorAll('meta[name="theme-color"]')
-    .forEach((m) => { m.content = dark ? '#0E1113' : '#F4F5F1'; });
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = dark ? '#0E1113' : '#F4F5F1';
 }
 applyTheme();
 
@@ -394,6 +394,8 @@ function openMeta(kind, root) {
 }
 
 function save(root) {
+  if (!rec.amount) { toast('先输入金额'); return; }
+  if (rec.amount.endsWith('.')) { toast('金额不完整，请输入小数部分'); return; }
   const amount = fen.fromYuan(rec.amount);
   if (amount <= 0) { toast('先输入金额'); return; }
 
@@ -989,6 +991,20 @@ export const meView = {
           <span class="sub">${d.monthLabel(state.month)}</span>
         </div>
 
+        ${store.lastWriteError ? `<div class="banner" role="alert" style="background:color-mix(in srgb, var(--over) 12%, var(--surface-sunk));color:var(--over)">
+          ${icon('shield', 16)}<span>数据未保存，请导出备份</span>
+        </div>` : ''}
+
+        ${store.lastQueueError ? `<div class="banner" role="alert" style="background:color-mix(in srgb, var(--over) 12%, var(--surface-sunk));color:var(--over)">
+          ${icon('shield', 16)}<span>离线备份未生效，请导出文件备份</span>
+        </div>` : ''}
+
+        ${store.lastBackupAt && Date.now() - Date.parse(store.lastBackupAt) > 30 * 24 * 60 * 60 * 1000 ? `<div class="banner" role="status" style="background:color-mix(in srgb, var(--alert) 12%, var(--surface-sunk))">
+          ${icon('shield', 16)}<span>已超过 30 天未导出备份，请尽快备份数据。</span>
+        </div>` : !store.lastBackupAt ? `<div class="banner" role="status" style="background:color-mix(in srgb, var(--alert) 12%, var(--surface-sunk))">
+          ${icon('shield', 16)}<span>尚未导出过备份，请定期备份数据。</span>
+        </div>` : ''}
+
         ${store.recoveredFrom() === 'snapshot' ? `<div class="banner" style="background:color-mix(in srgb, var(--alert) 10%, var(--surface-sunk))">
           ${icon('shield', 16)}
           <span>上次打开时<b>主数据读不出来</b>，已自动从备份快照恢复。建议现在做一次「备份到文件」。</span>
@@ -1052,6 +1068,9 @@ export const meView = {
 
         <div class="section">
           <div class="section-head"><h2>数据</h2><span class="hint">只存在这台设备</span></div>
+          ${/iPhone|iPad|iPod/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(navigator.userAgent) ? `<div class="banner" role="alert" style="background:color-mix(in srgb, var(--over) 12%, var(--surface-sunk))">
+            ${icon('shield', 16)}<span><b>iOS Safari 不支持持久化存储</b>，清理浏览器数据可能导致账本丢失，请定期导出备份。</span>
+          </div>` : ''}
           <div class="list">
             <button class="list-row" type="button" data-act="backup">
               <span class="list-lab">备份到文件</span>
@@ -1068,7 +1087,7 @@ export const meView = {
               <span class="list-chev">${icon('chevron', 16)}</span>
             </button>` : ''}
             <button class="list-row" type="button" data-act="export">
-              <span class="list-lab">导出 CSV</span>
+              <span class="list-lab">导出 CSV<span class="ledger-sub" style="display:inline;margin-left:4px;color:var(--text-weak)">（仅流水记录，不含预算）</span></span>
               <span class="list-chev">${icon('down', 17)}</span>
             </button>
             <button class="list-row" type="button" data-act="demo">
@@ -1106,7 +1125,7 @@ export const meView = {
           <div class="section-head"><h2>口径说明</h2></div>
           <div class="card">
             <div class="notes">
-              <p><b>日均</b>：分类日均 = 分类月总额 ÷ 当月已过天数；三餐日均 = 三餐合计 ÷ 有记录天数。</p>
+              <p><b>日均</b>：分类日均 = 分类月总额 ÷ 当月已过天数；三餐日均 = 三餐合计 ÷ 有记录天数（只要记了早/午/晚任一顿，该天就计入）。</p>
               <p><b>预计</b>：预计三餐 = 三餐日均 × 当月天数，不含零食。</p>
               <p><b>三餐合计</b>：只算早餐 + 午餐 + 晚餐；<b>零食</b>单列一行，不算在三餐里，只统计合计。</p>
               <p><b>餐饮合计</b>：三餐 + 零食，等于「餐饮」分类支出，在统计页表格下方跟餐饮子预算对账。</p>
@@ -1165,7 +1184,7 @@ function persistHint() {
   const s = store.state.settings.persistState;
   if (s === 'granted') return '浏览器已同意长期保留本站数据，不会被自动清理。';
   if (s === 'denied') return '浏览器暂时不同意长期保留，数据仍可能被回收，请定期备份。';
-  if (s === 'unsupported') return '这个浏览器不支持申请长期保留（iOS 常见），务必定期备份。';
+  if (s === 'unsupported') return '⚠️ 本设备不支持持久化存储（iOS Safari 常见），系统清理缓存时会丢失数据。请务必定期使用「备份到文件」功能。';
   return '尚未申请。每次记账时会自动申请一次。';
 }
 
@@ -1177,6 +1196,7 @@ export function backupFile() {
   a.href = url;
   a.download = `记账备份-${d.iso()}.json`;
   a.click();
+  store.markBackupExported();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
   toast(`已备份 ${data.records.length} 条记录`);
 }
@@ -1309,12 +1329,32 @@ function openSetting(kind, root) {
           <input type="number" inputmode="decimal" data-mb="${m.id}" value="${((b.meals[m.id] || 0) / 100).toFixed(0)}"
             style="width:96px;text-align:right;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-family:var(--num)" />
         </label>`).join('')}</div>
-        <p class="notes" style="margin-top:16px">
+        <p class="notes" style="margin-top:16px" id="meal-budget-hint">
           这里只设早/午/晚三个子预算；<b>零食不设子预算</b>，在统计页只统计合计。<br>
           三者之和建议不超过「餐饮」分类的预算，这样「分类 → 三餐」才是二级管控。
         </p>`,
       footer: `<button class="btn" type="button" data-ok>保存</button>`,
       onMount(el) {
+        const foodBudget = store.state.budget.category.food || 0;
+        const updateHint = () => {
+          const inputs = el.querySelectorAll('[data-mb]');
+          const mealSum = Array.from(inputs).reduce((sum, i) => sum + (Math.round(Number(i.value) * 100) || 0), 0);
+          const hint = el.querySelector('#meal-budget-hint');
+          if (hint && mealSum > 0) {
+            const diff = mealSum - foodBudget;
+            if (diff > 0) {
+              hint.innerHTML = `这里只设早/午/晚三个子预算；<b>零食不设子预算</b>，在统计页只统计合计。<br>
+                三者之和建议不超过「餐饮」分类的预算，这样「分类 → 三餐」才是二级管控。<br>
+                <span style="color:var(--alert);font-weight:650">⚠️ 三餐合计 ${fen.yuan(mealSum)} 已超过餐饮预算 ${fen.yuan(foodBudget)}，超出 ${fen.compact(diff)}</span>`;
+            } else {
+              hint.innerHTML = `这里只设早/午/晚三个子预算；<b>零食不设子预算</b>，在统计页只统计合计。<br>
+                三者之和建议不超过「餐饮」分类的预算，这样「分类 → 三餐」才是二级管控。<br>
+                <span style="color:var(--ok)">✓ 三餐合计 ${fen.yuan(mealSum)} / 餐饮预算 ${fen.yuan(foodBudget)}</span>`;
+            }
+          }
+        };
+        el.querySelectorAll('[data-mb]').forEach((i) => i.addEventListener('input', updateHint));
+        updateHint();
         el.querySelector('[data-ok]').addEventListener('click', () => {
           const out = {};
           el.querySelectorAll('[data-mb]').forEach((i) => { out[i.dataset.mb] = Math.round(Number(i.value) * 100) || 0; });

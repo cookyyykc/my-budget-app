@@ -1,10 +1,12 @@
 // 离线可用：把界面资源缓存起来，断网也能记账。
-const CACHE = 'ubudget-v42';
+importScripts('./version.js');
+const CACHE = `ubudget-${self.UBUDGET_CACHE_VERSION}`;
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
   './manifest.webmanifest',
+  './version.js',
   './js/app.js',
   './js/views.js',
   './js/components.js',
@@ -43,14 +45,20 @@ self.addEventListener('sync', (event) => {
 
 function openQueueDB() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('ubudget-queue', 1);
-    request.onupgradeneeded = () => {
+    const request = indexedDB.open('ubudget-queue', 2);
+    request.onupgradeneeded = (event) => {
       const db = request.result;
-      if (!db.objectStoreNames.contains('pending-actions')) {
-        db.createObjectStore('pending-actions', { keyPath: 'id' });
+      const oldVersion = event.oldVersion;
+      if (oldVersion < 1) {
+        if (!db.objectStoreNames.contains('pending-actions')) {
+          db.createObjectStore('pending-actions', { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains('record-backup')) {
+          db.createObjectStore('record-backup', { keyPath: 'id' });
+        }
       }
-      if (!db.objectStoreNames.contains('record-backup')) {
-        db.createObjectStore('record-backup', { keyPath: 'id' });
+      if (oldVersion < 2 && !db.objectStoreNames.contains('state-snapshot')) {
+        db.createObjectStore('state-snapshot', { keyPath: 'id' });
       }
     };
     request.onsuccess = () => resolve(request.result);

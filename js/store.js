@@ -1,9 +1,10 @@
 import { d, fen, pct } from './format.js';
-import { queueRecordAction } from './sync-queue.js';
+import { queueRecordAction, saveStateSnapshot } from './sync-queue.js';
 
 const KEY = 'ubudget.v2';
 const SNAPSHOT_KEY = 'ubudget.v2.snapshot';   // 冗余快照：主数据损坏时用它自救
 const LEGACY_KEY = 'ubudget.v1';
+const LAST_BACKUP_KEY = 'ubudget.lastBackupAt';
 
 /** 三餐的默认时间，用于历史数据与补记 */
 const MEAL_TIME = { breakfast: '07:30', lunch: '12:10', dinner: '18:00', snack: '21:30' };
@@ -169,14 +170,19 @@ function buildHistory() {
 }
 
 /** 旧版本里用户自己记过的账（排除掉我生成的演示数据） */
-function migratableRecords() {
+function migrateLegacy() {
   try {
     const raw = localStorage.getItem(LEGACY_KEY);
-    if (!raw) return [];
+    if (!raw) return null;
     const old = JSON.parse(raw);
-    return (old.records || []).filter((r) => !String(r.id).startsWith('demo-'));
-  } catch {
-    return [];
+    return {
+      records: (old.records || []).filter((r) => !String(r.id).startsWith('demo-')),
+      budget: old.budget,
+      settings: old.settings,
+    };
+  } catch (err) {
+    console.warn('旧数据迁移读取失败', err);
+    return null;
   }
 }
 
@@ -218,23 +224,63 @@ function load() {
   }
   const fresh = emptyState();
   // 旧设备上如果有用户自己记过的账，先搬过来，再接上内置历史。
-  fresh.records = [...migratableRecords(), ...buildHistory()];
+  const legacy = migrateLegacy();
+  if (legacy) {
+    fresh.records = [...legacy.records, ...buildHistory()];
+    if (legacy.budget && typeof legacy.budget === 'object') {
+      fresh.budget = { ...fresh.budget, ...legacy.budget };
+    }
+    if (legacy.settings && typeof legacy.settings === 'object') {
+      fresh.settings = { ...fresh.settings, ...legacy.settings, seeded: true };
+    }
+  } else {
+    fresh.records = buildHistory();
+  }
   fresh.settings.seeded = true;
-  try { localStorage.setItem(KEY, JSON.stringify(fresh)); } catch { /* 隐私模式下忽略 */ }
+  try {
+    localStorage.setItem(KEY, JSON.stringify(fresh));
+    if (legacy) localStorage.removeItem(LEGACY_KEY);
+  } catch (err) {
+    console.warn('迁移数据保存失败', err);
+  }
   return fresh;
 }
 
+let lastWriteError = '';
+let lastQueueError = '';
 function persist() {
   const payload = JSON.stringify(state);
+  let failure = '';
   try {
     localStorage.setItem(KEY, payload);
   } catch (err) {
     console.warn('主数据保存失败', err);
+    failure = `主数据保存失败：${err?.message || String(err)}`;
   }
   // 再写一份快照：两次写入之间被打断，也不会两处同时坏掉
   try {
     localStorage.setItem(SNAPSHOT_KEY, payload);
-  } catch { /* 存不下就只留主数据 */ }
+  } catch (err) {
+    console.warn('备份快照保存失败', err);
+    failure = failure || `备份快照保存失败：${err?.message || String(err)}`;
+  }
+  lastWriteError = failure;
+  if (!failure) {
+    void saveStateSnapshot(state).catch((err) => {
+      lastQueueError = `IndexedDB 状态快照保存失败：${err?.message || String(err)}`;
+      emit();
+    });
+  }
+}
+
+async function queueRecord(op, record) {
+  try {
+    const ok = await queueRecordAction(op, record);
+    lastQueueError = ok ? '' : '离线队列写入失败';
+  } catch (err) {
+    lastQueueError = `离线队列写入失败：${err?.message || String(err)}`;
+  }
+  emit();
 }
 
 function emit() { listeners.forEach((fn) => fn()); }
@@ -243,6 +289,18 @@ state = load();
 
 export const store = {
   get state() { return state; },
+  get lastWriteError() { return lastWriteError; },
+  get lastQueueError() { return lastQueueError; },
+  get lastBackupAt() {
+    try { return localStorage.getItem(LAST_BACKUP_KEY); } catch { return null; }
+  },
+  markBackupExported() {
+    try { localStorage.setItem(LAST_BACKUP_KEY, new Date().toISOString()); } catch (err) {
+      console.warn('备份时间记录失败', err);
+    }
+    // 用户已手动导出备份，恢复提示可以清除（之前 persist 成功就清，会让用户误以为问题已解决）
+    if (recoveredFrom) { recoveredFrom = null; emit(); }
+  },
   subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); },
   load,
 
@@ -259,7 +317,7 @@ export const store = {
     record.tags = normalizeTags(record.tags);
     state.records.push(record);
     persist(); emit();
-    void queueRecordAction('upsert', record);
+    void queueRecord('upsert', record);
     return record;
   },
   updateRecord(id, patch) {
@@ -267,13 +325,13 @@ export const store = {
     if (i < 0) return;
     state.records[i] = normalizeRecord({ ...state.records[i], ...patch });
     persist(); emit();
-    void queueRecordAction('upsert', state.records[i]);
+    void queueRecord('upsert', state.records[i]);
   },
   deleteRecord(id) {
     const removed = state.records.find((r) => r.id === id);
     state.records = state.records.filter((r) => r.id !== id);
     persist(); emit();
-    if (removed) void queueRecordAction('delete', removed);
+    if (removed) void queueRecord('delete', removed);
   },
   setBudget(patch) {
     state.budget = { ...state.budget, ...patch };
@@ -352,7 +410,9 @@ export const store = {
     // 覆盖前先把当前账本另存一份，万一导错了还能退回
     try {
       localStorage.setItem(`${KEY}.before-import`, JSON.stringify(state));
-    } catch { /* 存不下就跳过 */ }
+    } catch (err) {
+      return { ok: false, error: `存储空间不足，无法安全导入：${err?.message || String(err)}` };
+    }
 
     state.records = data.records;
     if (data.budget) state.budget = { ...structuredClone(DEFAULT_BUDGET), ...data.budget };
@@ -413,7 +473,8 @@ export function effectiveBudget(monthKey = d.monthKey()) {
 
   if (mode === 'strict') {
     const over = Math.max(0, prevExpense - prevBudget);
-    return { amount: Math.max(0, base - over), carry: -over, mode };
+    const amount = Math.max(Math.ceil(base * 0.1), base - over);
+    return { amount, carry: amount - base, mode };
   }
   const saved = Math.max(0, prevBudget - prevExpense);
   const cap = state.budget.rolloverCap || 0;
