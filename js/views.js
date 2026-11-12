@@ -4,9 +4,13 @@ import {
   monthRecords, totals, budgetStatus, mealStats, otherStats, overspendReasons, advice,
   todayMealDots, monthLabelShort, nowHHMM,
 } from './store.js';
-import { icon, toast, openSheet, closeSheet, confirmSheet, budgetStrip, tray, hbars } from './components.js';
+import { icon, toast, openSheet, closeSheet, confirmSheet, budgetStrip, tray } from './components.js';
 import { getQueueCount } from './sync-queue.js';
 import { pieChart, lineChart } from './charts.js';
+
+// 应用版本号，唯一来源是根目录 version.js（index.html 里先于 app.js 加载）。
+// 读不到时不显示，不编一个假版本号。
+const APP_VERSION = (typeof self !== 'undefined' && self.UBUDGET_CACHE_VERSION) || '';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -845,11 +849,6 @@ export const statsView = {
         </div>
 
         <div class="section">
-          <div class="section-head"><h2>三餐对比</h2></div>
-          <div class="card">${hbars(ms.rows)}</div>
-        </div>
-
-        <div class="section">
           <div class="section-head">
             <h2>餐饮之外</h2>
             <span class="hint">合计 ${fen.compact(os.sum)} · 占 ${Math.round(os.share)}%</span>
@@ -1248,9 +1247,8 @@ export const meView = {
               <p><b>预算</b>：分类子预算之和可以小于总预算，差额算未分配额度。</p>
               <p><b>金额</b>：全程以「分」为单位整数计算，不会出现浮点误差。</p>
               <p><b>数据存储</b>：只存在这台设备的浏览器里，不上传任何服务器。</p>
-            </div>
-          </div>
-        </div>
+                    </div>
+        ${APP_VERSION ? `<p class="version-foot">版本 ${APP_VERSION}</p>` : ''}
       </div>`;
   },
 

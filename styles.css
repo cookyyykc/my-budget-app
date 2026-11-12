@@ -1097,15 +1097,27 @@ table.data tfoot tr + tr td { border-top: 1px solid var(--line); padding-top: va
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 4px;
-  background: var(--dock-bg);
-  backdrop-filter: var(--dock-blur);
-  -webkit-backdrop-filter: var(--dock-blur);
+  background: transparent;
   border: 1px solid var(--dock-edge);
   border-radius: var(--r-pill);
   box-shadow:
     inset 0 1px 0 var(--dock-hi),
     var(--dock-shadow);
   isolation: isolate;
+}
+
+/* iOS Safari 已知问题：position: fixed 元素自身带 backdrop-filter 时，
+   滚动中会跟着内容跑、不再贴住视口底部。玻璃改由 ::before 承担，
+   fixed 元素本身只留边框与阴影。 */
+.tabbar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--dock-bg);
+  backdrop-filter: var(--dock-blur);
+  -webkit-backdrop-filter: var(--dock-blur);
+  z-index: -1;
 }
 .tab-indicator {
   position: absolute;
@@ -1380,20 +1392,22 @@ main.is-transitioning { pointer-events: none; }
 
   /* iOS 27 的 tab bar 没有 1px 边框，边缘交给 .5px 浅灰环 */
   border: 0;
-  background-color: rgba(
-    var(--ios27-glass-rgb),
-    calc(var(--ios27-glass-alpha) * (1.6 - 1.1 * var(--ios27-glass-transparency)))
-  );
-  background-image: none;
-  /* saturate 必须写在 var() 外面，两种取值才是同一条合法的 filter 列表 */
-  backdrop-filter: var(--hyalite, blur(calc(12px * (.5 + .8 * var(--ios27-glass-transparency))))) saturate(1.8);
-  -webkit-backdrop-filter: var(--hyalite, blur(calc(12px * (.5 + .8 * var(--ios27-glass-transparency))))) saturate(1.8);
   /* 四层阴影缺一不可：投影 + 浅灰环 + 上内阴影 + 下内阴影 */
   box-shadow:
     var(--ios27-glass-shadow),
     0 0 0 .5px var(--ios27-glass-rim),
     inset 0 40px 10px -40px var(--ios27-glass-inner),
     inset 0 -40px 10px -40px var(--ios27-glass-inner);
+}
+
+.tabbar::before {
+  background-color: rgba(
+    var(--ios27-glass-rgb),
+    calc(var(--ios27-glass-alpha) * (1.6 - 1.1 * var(--ios27-glass-transparency)))
+  );
+  background-image: none;
+  backdrop-filter: var(--hyalite, blur(calc(12px * (.5 + .8 * var(--ios27-glass-transparency))))) saturate(1.8);
+  -webkit-backdrop-filter: var(--hyalite, blur(calc(12px * (.5 + .8 * var(--ios27-glass-transparency))))) saturate(1.8);
 }
 
 /* 选中胶囊：实心背景，绝不叠第二层玻璃，否则模糊会累积成一团雾 */
@@ -1748,4 +1762,10 @@ html[data-theme="dark"] .tab-indicator {
   .chart-legend-item {
     padding: var(--sp-2) var(--sp-1);
   }
+}
+.version-foot {
+  text-align: center;
+  color: var(--ink-3);
+  font-size: var(--fs-sub);
+  padding: 4px 0 12px;
 }
