@@ -209,6 +209,9 @@ export const recordView = {
     bind(root, (e) => {
       const key = e.target.closest('[data-key]')?.dataset.key;
       if (key) {
+        // P1: 键盘触觉反馈
+        if (navigator.vibrate) navigator.vibrate(5);
+
         if (key === 'back') rec.amount = rec.amount.slice(0, -1);
         else if (key === '.') { if (!rec.amount) rec.amount = '0.'; else if (!rec.amount.includes('.')) rec.amount += '.'; }
         else if (key === '00') { if (rec.amount && !/\.\d$/.test(rec.amount)) rec.amount += '00'; }
@@ -495,7 +498,7 @@ export const ledgerView = {
           return `
             <div class="day-head">
               <span class="d">${d.dayLabel(date)}</span>
-              <span style="display:flex;align-items:center;gap:10px">
+              <span class="flex-row-3">
                 <span class="num">${dayOut ? `−${fen.format(dayOut)}` : ''}${dayIn ? ` +${fen.format(dayIn)}` : ''}</span>
                 <button class="day-fill" type="button" data-backfill="${date}"
                         aria-label="补记 ${d.dayLabel(date)} 的账">＋补记</button>
@@ -592,19 +595,19 @@ function openRecord(id, root) {
       </label>
 
       <span class="field-lab">分类</span>
-      <div class="filters" style="margin-bottom:14px">
+      <div class="filters mb-3">
         ${cats().map((c) => `<button class="fchip" type="button" data-e-cat="${c.id}"
             aria-pressed="${draft.categoryId === c.id}">${c.name}</button>`).join('')}
       </div>
 
       ${needMeal() ? `
         <span class="field-lab">餐次</span>
-        <div class="filters" style="margin-bottom:14px">
+        <div class="filters mb-3">
           ${MEALS.map((m) => `<button class="fchip" type="button" data-e-meal="${m.id}"
               aria-pressed="${draft.mealType === m.id}">${m.name}</button>`).join('')}
         </div>` : ''}
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="grid-2col">
         <label class="field"><span class="field-lab">日期</span>
           <input type="date" id="e-date" value="${draft.date}" /></label>
         <label class="field"><span class="field-lab">时间</span>
@@ -615,7 +618,7 @@ function openRecord(id, root) {
         <input type="text" id="e-note" maxlength="50" value="${esc(draft.note || '')}" /></label>
 
       <span class="field-lab">标签</span>
-      <div class="note-preset-list" style="margin-bottom:16px">
+      <div class="note-preset-list mb-4">
         ${tagSuggestions().map((tag) => `
           <button class="note-preset" type="button" data-e-tag="${esc(tag)}"
                   aria-pressed="${draft.tags.includes(tag)}">${esc(tag)}</button>`).join('')}
@@ -776,7 +779,7 @@ export const statsView = {
                   ? `<tr class="is-tap" data-meal-row="${r.id}">
                        <td class="rowname">${r.name}</td>
                        <td>${fen.compact(r.sum)}</td>
-                       <td class="muted" colspan="3" style="text-align:right">—</td>
+                       <td class="muted text-right" colspan="3">—</td>
                      </tr>`
                   : `<tr class="is-tap" data-meal-row="${r.id}">
                        <td class="rowname">${r.name}</td>
@@ -808,7 +811,7 @@ export const statsView = {
               ms.threeProjection == null ? '<span class="muted">—</span>' : fen.compact(ms.threeProjection)
             }</div>
           </div>
-          <p class="notes" style="margin-top:10px">
+          <p class="notes mt-2half">
             <b>三餐合计 = 早餐 + 午餐 + 晚餐</b>；零食单列，不计入三餐。<br>
             餐饮合计（含零食）${fen.yuan(ms.sum)} · 子预算 ${fen.compact(ms.budget)} ·
             ${ms.over > 0 ? `<span class="tag-over">超 ${fen.compact(ms.over)}</span>`
@@ -818,34 +821,12 @@ export const statsView = {
         </div>
 
         <div class="section">
-          ${(() => {
-            // 环形图：调用后端提供的 getCategoryBreakdown
-            if (typeof store.getCategoryBreakdown !== 'function') {
-              return ''; // 后端接口未实现时不显示
-            }
-            const breakdown = store.getCategoryBreakdown(mk);
-            if (!breakdown || breakdown.total === 0) {
-              return `<div class="chart-container" style="margin-top:var(--sp-4)">
-                <div class="chart-empty" style="text-align:center;padding:var(--sp-5);color:var(--ink-3)">
-                  <p>本月还没有支出</p>
-                </div>
-              </div>`;
-            }
-            return `<div class="chart-container" style="margin-top:var(--sp-4)">
-              <div class="chart-pie-wrapper">
-                ${pieChart(breakdown, { size: 200, centerLabel: fen.compact(breakdown.total) })}
-              </div>
-              <div class="chart-legend">
-                ${breakdown.categories.map(cat => `
-                  <button class="chart-legend-item" type="button" data-chart-cat="${cat.id}">
-                    <span class="chart-legend-dot" style="background:${cat.color}"></span>
-                    <span class="chart-legend-label">${esc(cat.name)}</span>
-                    <span class="chart-legend-value">${fen.compact(cat.amount)} · ${cat.percent.toFixed(1)}%</span>
-                  </button>
-                `).join('')}
-              </div>
-            </div>`;
-          })()}
+          <div class="chart-container mt-4" id="chart-pie-container">
+            <div class="chart-loading">
+              <div class="chart-loading-spinner"></div>
+              <div class="chart-loading-text">生成图表中...</div>
+            </div>
+          </div>
         </div>
 
         <div class="section">
@@ -860,7 +841,7 @@ export const statsView = {
               </thead>
               <tbody>
                 ${osRows.length === 0
-                  ? `<tr><td colspan="6" style="text-align:center;color:var(--ink-3);padding:24px">这个月还没有餐饮之外的支出</td></tr>`
+                  ? `<tr><td colspan="6" class="table-empty">这个月还没有餐饮之外的支出</td></tr>`
                   : osRows.map((r) => `
                   <tr class="is-tap" data-cat-row="${r.id}">
                     <td class="rowname">${r.name}</td>
@@ -906,7 +887,7 @@ export const statsView = {
                     <span class="reason-detail">占总支出 ${Math.round((r.sum / Math.max(1, t.expense)) * 100)}%</span>
                   </div>`).join('')}
               </div>
-              <p class="notes" style="margin-top:14px">
+              <p class="notes mt-14">
                 各分类都没超自己的子预算，超的是总额：分类额度合计 ${fen.compact(catBudgetSum)}，
                 比月总预算 ${fen.compact(st.budget)} 高出 ${fen.compact(catBudgetSum - st.budget)}。
                 要么把分类额度改小，要么把月总预算调回 ${fen.compact(catBudgetSum)}。
@@ -916,31 +897,76 @@ export const statsView = {
 
         <div class="section">
           <div class="section-head"><h2>${st.state === 'over' ? '怎么补救' : '本月进度'}</h2></div>
-          <div class="advice">${advice(mk).map((l) => `<p style="margin:0 0 6px">${l}</p>`).join('')}</div>
+          <div class="advice">${advice(mk).map((l) => `<p class="mb-6">${l}</p>`).join('')}</div>
         </div>
 
-        ${(() => {
-          // 折线图：调用后端提供的 getMonthlyTrend
-          if (typeof store.getMonthlyTrend !== 'function') {
-            return ''; // 后端接口未实现时不显示
-          }
-          const trend = store.getMonthlyTrend(6);
-          return `<div class="section">
-            <div class="section-head">
-              <h2>趋势</h2>
-              <span class="hint">最近 6 个月支出变化</span>
+        <div class="section" id="chart-line-section">
+          <div class="chart-container" id="chart-line-container">
+            <div class="chart-loading">
+              <div class="chart-loading-spinner"></div>
+              <div class="chart-loading-text">生成图表中...</div>
             </div>
-            <div class="chart-container">
-              <div class="chart-line-wrapper">
-                ${lineChart(trend, { width: 600, height: 240 })}
-              </div>
-            </div>
-          </div>`;
-        })()}
+          </div>
+        </div>
       </div>`;
   },
 
   mount(root) {
+    // 异步生成图表（显示加载态）
+    requestAnimationFrame(() => {
+      const mk = state.month;
+
+      // 环形图
+      const pieContainer = root.querySelector('#chart-pie-container');
+      if (pieContainer && typeof store.getCategoryBreakdown === 'function') {
+        const breakdown = store.getCategoryBreakdown(mk);
+        if (!breakdown || breakdown.total === 0) {
+          pieContainer.innerHTML = `
+            <div class="chart-empty">
+              <p>本月还没有支出</p>
+            </div>`;
+        } else {
+          pieContainer.innerHTML = `
+            <div class="chart-pie-wrapper">
+              ${pieChart(breakdown, { size: 200, centerLabel: fen.compact(breakdown.total) })}
+            </div>
+            <div class="chart-legend">
+              ${breakdown.categories.map(cat => `
+                <button class="chart-legend-item" type="button" data-chart-cat="${cat.id}">
+                  <span class="chart-legend-dot" style="background:${cat.color}"></span>
+                  <span class="chart-legend-label">${esc(cat.name)}</span>
+                  <span class="chart-legend-value">${fen.compact(cat.amount)} · ${cat.percent.toFixed(1)}%</span>
+                </button>
+              `).join('')}
+            </div>`;
+        }
+      }
+
+      // 折线图
+      const lineSection = root.querySelector('#chart-line-section');
+      const lineContainer = root.querySelector('#chart-line-container');
+      if (lineSection && lineContainer && typeof store.getMonthlyTrend === 'function') {
+        const trend = store.getMonthlyTrend(6);
+        if (trend && trend.months) {
+          lineSection.innerHTML = `
+            <div class="section-head">
+              <h2>趋势</h2>
+              <span class="hint">最近 6 个月支出变化</span>
+            </div>
+            <div class="chart-container" id="chart-line-container">
+              <div class="chart-line-wrapper">
+                ${lineChart(trend, { width: 600, height: 240 })}
+              </div>
+            </div>`;
+        } else {
+          lineSection.remove();
+        }
+      } else if (lineSection) {
+        // 后端接口未实现，移除整个 section
+        lineSection.remove();
+      }
+    });
+
     bind(root, (e) => {
       const meal = e.target.closest('[data-tray]')?.dataset.tray || e.target.closest('[data-meal-row]')?.dataset.mealRow;
       const ms = mealStats(state.month);
@@ -1043,14 +1069,14 @@ function openCatList(root, title, filter = {}) {
       ${summaryHtml(filter.used != null ? filter.used : sum, filter.budget)}
       ${list.length === 0
         ? `<div class="empty"><p>没有对应的流水。</p></div>`
-        : `<p class="notes" style="margin-bottom:12px">共 ${list.length} 笔</p>
+        : `<p class="notes mb-12">共 ${list.length} 笔</p>
         <div class="list">${list.map((r) => {
           const c = catById(r.categoryId);
           const m = mealById(r.mealType);
           return `<div class="list-row">
             <span class="ledger-ic" style="--cat:${c.color}">${icon(m?.icon || c.icon, 16)}</span>
             <span class="list-lab">${c.name}${m ? ` · ${m.name}` : ''}
-              <span class="ledger-sub" style="display:block">${r.date}${r.note ? ` · ${esc(r.note)}` : ''}</span></span>
+              <span class="ledger-sub block">${r.date}${r.note ? ` · ${esc(r.note)}` : ''}</span></span>
             <span class="list-val">${fen.format(r.amount)}</span>
           </div>`;
         }).join('')}</div>`}`,
@@ -1064,24 +1090,24 @@ function summaryHtml(used, budget) {
   const over = hasBudget && left < 0;
   const ratio = hasBudget ? Math.min(100, (used / budget) * 100) : 0;
 
-  return `<div class="card" style="margin-bottom:var(--sp-4)">
-    <div style="display:flex;justify-content:${hasBudget ? 'space-between' : 'flex-start'};align-items:flex-end;gap:12px">
+  return `<div class="card mb-4">
+    <div class="${hasBudget ? 'flex-between' : 'flex-start'}">
       <span>
         <span class="kpi-lab">用了</span>
-        <span class="kpi-val" style="display:block">${fen.yuan(used)}</span>
+        <span class="kpi-val block">${fen.yuan(used)}</span>
       </span>
       ${hasBudget ? `
-      <span style="text-align:right">
+      <span class="text-right">
         <span class="kpi-lab">${over ? '超了' : '剩余'}</span>
-        <span class="kpi-val ${over ? 'is-over' : ''}" style="display:block">${fen.yuan(Math.abs(left))}</span>
+        <span class="kpi-val ${over ? 'is-over' : ''} block">${fen.yuan(Math.abs(left))}</span>
       </span>` : ''}
     </div>
     ${hasBudget ? `
-      <div class="bar ${over ? 'is-over' : ''}" style="margin-top:12px">
+      <div class="bar ${over ? 'is-over' : ''} mt-12">
         <div class="bar-fill" style="width:${ratio}%;background:${over ? 'var(--over)' : 'var(--ink-3)'}"></div>
       </div>
-      <div class="kpi-note" style="margin-top:8px">子预算 ${fen.yuan(budget)} · 已用 ${Math.round((used / budget) * 100)}%</div>`
-      : `<div class="kpi-note" style="margin-top:8px">没有设子预算，只统计合计</div>`}
+      <div class="kpi-note mt-8">子预算 ${fen.yuan(budget)} · 已用 ${Math.round((used / budget) * 100)}%</div>`
+      : `<div class="kpi-note mt-8">没有设子预算，只统计合计</div>`}
   </div>`;
 }
 
@@ -1154,7 +1180,7 @@ export const meView = {
               <span class="list-chev">${icon('chevron', 16)}</span>
             </button>
           </div>
-          ${st.carry !== 0 ? `<p class="notes" style="margin-top:8px">
+          ${st.carry !== 0 ? `<p class="notes mt-8">
             本月生效预算 ${fen.yuan(st.budget)}（${st.carry > 0 ? '含上月结余滚存' : '已扣上月超支'} ${fen.compact(Math.abs(st.carry))}）。
           </p>` : ''}
         </div>
@@ -1166,7 +1192,7 @@ export const meView = {
             <div class="list-row"><span class="list-lab">餐饮合计</span><span class="list-val">${fen.yuan(ms.sum)}</span></div>
             <div class="list-row"><span class="list-lab">其他花费合计</span><span class="list-val">${fen.yuan(os.sum)}</span></div>
             <div class="list-row"><span class="list-lab">预算状态</span>
-              <span class="list-val" style="color:var(--st);font-weight:650">${st.state === 'over' ? `超 ${fen.compact(st.overspend)}` : st.label}</span></div>
+              <span class="list-val text-st">${st.state === 'over' ? `超 ${fen.compact(st.overspend)}` : st.label}</span></div>
           </div>
         </div>
 
@@ -1202,7 +1228,7 @@ export const meView = {
               <span class="list-chev">${icon('chevron', 16)}</span>
             </button>` : ''}
             <button class="list-row" type="button" data-act="export">
-              <span class="list-lab">导出 CSV<span class="ledger-sub" style="display:inline;margin-left:4px;color:var(--text-weak)">（仅流水记录，不含预算）</span></span>
+              <span class="list-lab">导出 CSV<span class="ledger-sub inline-hint">（仅流水记录，不含预算）</span></span>
               <span class="list-chev">${icon('down', 17)}</span>
             </button>
             <button class="list-row" type="button" data-act="demo">
@@ -1210,14 +1236,14 @@ export const meView = {
               <span class="list-chev">${icon('chevron', 16)}</span>
             </button>
             <button class="list-row" type="button" data-act="clear">
-              <span class="list-lab" style="color:var(--over)">清空全部记录</span>
+              <span class="list-lab text-over">清空全部记录</span>
               <span class="list-chev">${icon('trash', 17)}</span>
             </button>
           </div>
-          <div class="list" style="margin-top:12px">
+          <div class="list mt-12">
             <div class="list-row">
               <span class="list-lab">存储保护
-                <span class="ledger-sub" style="display:block">${persistHint()}</span></span>
+                <span class="ledger-sub block">${persistHint()}</span></span>
               <span class="list-val">${persistLabel()}</span>
             </div>
             <div class="list-row">
@@ -1226,11 +1252,11 @@ export const meView = {
             </div>
             <div class="list-row">
               <span class="list-lab">离线队列
-                <span class="ledger-sub" style="display:block">恢复网络后自动补同步</span></span>
+                <span class="ledger-sub block">恢复网络后自动补同步</span></span>
               <span class="list-val" id="queue-count">检查中…</span>
             </div>
           </div>
-          <p class="notes" style="margin-top:8px">
+          <p class="notes mt-8">
             浏览器存储可能被系统回收。建议每周点一次「备份到文件」，把导出的 json 存到网盘或微信收藏里；
             换网址、换手机时用「从文件恢复」导回来，记录一条都不会丢。
           </p>
@@ -1394,9 +1420,9 @@ function openSetting(kind, root) {
           <span class="ledger-ic" style="--cat:${c.color}">${icon(c.icon, 16)}</span>
           <span class="list-lab">${c.name}</span>
           <input type="number" inputmode="decimal" data-cb="${c.id}" value="${((b.category[c.id] || 0) / 100).toFixed(0)}"
-            style="width:96px;text-align:right;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-family:var(--num)" />
+            class="budget-input" />
         </label>`).join('')}</div>
-        <div style="display:grid;gap:8px;margin-top:16px">
+        <div class="grid-gap8-mt16">
           <p class="notes" id="sumbox"></p>
           <button class="btn btn--ghost btn--sm" type="button" data-preset>套用 ¥2,000 建议模板</button>
         </div>`,
@@ -1441,9 +1467,9 @@ function openSetting(kind, root) {
           <span class="ledger-ic" style="--cat:var(--c-food)">${icon(m.icon, 16)}</span>
           <span class="list-lab">${m.name}</span>
           <input type="number" inputmode="decimal" data-mb="${m.id}" value="${((b.meals[m.id] || 0) / 100).toFixed(0)}"
-            style="width:96px;text-align:right;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-family:var(--num)" />
+            class="budget-input" />
         </label>`).join('')}</div>
-        <p class="notes" style="margin-top:16px" id="meal-budget-hint">
+        <p class="notes mt-16" id="meal-budget-hint">
           这里只设早/午/晚三个子预算；<b>零食不设子预算</b>，在统计页只统计合计。<br>
           三者之和建议不超过「餐饮」分类的预算，这样「分类 → 三餐」才是二级管控。
         </p>`,
@@ -1459,11 +1485,11 @@ function openSetting(kind, root) {
             if (diff > 0) {
               hint.innerHTML = `这里只设早/午/晚三个子预算；<b>零食不设子预算</b>，在统计页只统计合计。<br>
                 三者之和建议不超过「餐饮」分类的预算，这样「分类 → 三餐」才是二级管控。<br>
-                <span style="color:var(--alert);font-weight:650">⚠️ 三餐合计 ${fen.yuan(mealSum)} 已超过餐饮预算 ${fen.yuan(foodBudget)}，超出 ${fen.compact(diff)}</span>`;
+                <span class="text-alert">⚠️ 三餐合计 ${fen.yuan(mealSum)} 已超过餐饮预算 ${fen.yuan(foodBudget)}，超出 ${fen.compact(diff)}</span>`;
             } else {
               hint.innerHTML = `这里只设早/午/晚三个子预算；<b>零食不设子预算</b>，在统计页只统计合计。<br>
                 三者之和建议不超过「餐饮」分类的预算，这样「分类 → 三餐」才是二级管控。<br>
-                <span style="color:var(--ok)">✓ 三餐合计 ${fen.yuan(mealSum)} / 餐饮预算 ${fen.yuan(foodBudget)}</span>`;
+                <span class="text-ok">✓ 三餐合计 ${fen.yuan(mealSum)} / 餐饮预算 ${fen.yuan(foodBudget)}</span>`;
             }
           }
         };
@@ -1485,7 +1511,7 @@ function openSetting(kind, root) {
       body: `<div class="list">${OVERSPEND_MODES.map((m) => `
         <button class="list-row" type="button" data-mode="${m.id}">
           <span class="list-lab">${m.name}
-            <span class="ledger-sub" style="display:block">${m.desc}</span></span>
+            <span class="ledger-sub block">${m.desc}</span></span>
           ${b.overspendMode === m.id ? icon('check', 18) : ''}
         </button>`).join('')}</div>`,
       onMount(el) {
@@ -1542,7 +1568,7 @@ function monthNav() {
   const cur = d.monthKey();
   const isCur = state.month === cur;
   return `
-    <div class="strip" style="display:flex;align-items:center;justify-content:space-between">
+    <div class="strip flex-between-center">
       <button class="nav-btn" type="button" data-month="-1" aria-label="上个月">‹</button>
       <span class="nav-title">${d.monthLabel(state.month)}${isCur ? ' · 本月' : ''}</span>
       <button class="nav-btn" type="button" data-month="1" aria-label="下个月" ${isCur ? 'disabled' : ''}>›</button>

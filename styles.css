@@ -21,7 +21,9 @@
   /* 线与影 */
   --line:        #E1E3DC;
   --line-strong: #CBD0C6;
+  /* --shadow-1: 卡片 / 按钮 / 筛选 chip / 表格容器等浮起元素的轻微投影 */
   --shadow-1: 0 1px 2px rgba(20, 24, 27, .06);
+  /* --shadow-2: 底部弹层（sheet）的重阴影，带顶部细边框 */
   --shadow-2: 0 -1px 0 var(--line), 0 -18px 40px rgba(20, 24, 27, .10);
 
   /* 预算状态四档 —— 全局唯一的彩色语义 */
@@ -106,7 +108,9 @@
     --ink-inv:#0F1214;
     --line:        #2A2F31;
     --line-strong: #3A4042;
+  /* --shadow-1: 卡片 / 按钮 / 筛选 chip / 表格容器等浮起元素的轻微投影 */
     --shadow-1: 0 1px 2px rgba(0, 0, 0, .5);
+  /* --shadow-2: 底部弹层（sheet）的重阴影，带顶部细边框 */
     --shadow-2: 0 -1px 0 var(--line), 0 -18px 40px rgba(0, 0, 0, .5);
     --safe:  #57B189;
     --warn:  #C9A13C;
@@ -139,7 +143,9 @@ html[data-theme="dark"] {
   --ink-inv:#0F1214;
   --line:        #2A2F31;
   --line-strong: #3A4042;
+  /* --shadow-1: 卡片 / 按钮 / 筛选 chip / 表格容器等浮起元素的轻微投影 */
   --shadow-1: 0 1px 2px rgba(0, 0, 0, .5);
+  /* --shadow-2: 底部弹层（sheet）的重阴影，带顶部细边框 */
   --shadow-2: 0 -1px 0 var(--line), 0 -18px 40px rgba(0, 0, 0, .5);
   --safe:  #57B189;
   --warn:  #C9A13C;
@@ -1768,4 +1774,79 @@ html[data-theme="dark"] .tab-indicator {
   color: var(--ink-3);
   font-size: var(--fs-sub);
   padding: 4px 0 12px;
+}
+
+/* ============================================================
+   工具类 · P1 新增
+   ============================================================ */
+
+/* 间距 */
+.mb-3 { margin-bottom: var(--sp-3); }
+.mb-4 { margin-bottom: var(--sp-4); }
+.mt-4 { margin-top: var(--sp-4); }
+.mt-2half { margin-top: 10px; }
+.mt-14 { margin-top: 14px; }
+.mb-12 { margin-bottom: 12px; }
+.mb-6 { margin-bottom: 6px; }
+.mt-8 { margin-top: 8px; }
+.mt-12 { margin-top: 12px; }
+.mt-16 { margin-top: 16px; }
+
+/* 布局 */
+.flex-row { display: flex; align-items: center; gap: var(--sp-2); }
+.flex-row-3 { display: flex; align-items: center; gap: 10px; }
+.flex-between-center { display: flex; align-items: center; justify-content: space-between; }
+.grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+.flex-between { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+.flex-start { display: flex; justify-content: flex-start; align-items: flex-end; gap: 12px; }
+
+/* 对齐 */
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+
+/* 显示 */
+.block { display: block; }
+.inline { display: inline; }
+
+/* 颜色 */
+.text-over { color: var(--over); }
+.text-st { color: var(--st); font-weight: 650; }
+.text-weak { color: var(--text-weak); }
+.text-alert { color: var(--alert); font-weight: 650; }
+.text-ok { color: var(--safe); }
+
+/* 组合工具 */
+.inline-hint { display: inline; margin-left: 4px; color: var(--text-weak); }
+.grid-gap8-mt16 { display: grid; gap: 8px; margin-top: 16px; }
+.budget-input { width: 96px; text-align: right; border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; font-family: var(--num); }
+
+/* 表格空态 */
+.table-empty { text-align: center; color: var(--ink-3); padding: 24px; }
+
+/* 图表加载态 */
+.chart-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-6);
+  min-height: 200px;
+  background: var(--surface-sunk);
+  border-radius: var(--r-md);
+}
+.chart-loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--line);
+  border-top-color: var(--ink);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.chart-loading-text {
+  margin-top: var(--sp-3);
+  font-size: var(--fs-sub);
+  color: var(--ink-3);
 }

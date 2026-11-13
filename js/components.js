@@ -45,6 +45,8 @@ export function toast(text, ms = 1900) {
   root.replaceChildren();               // 同时只留一条，避免叠成一堆
   const el = document.createElement('div');
   el.className = 'toast';
+  el.setAttribute('role', 'status');
+  el.setAttribute('aria-live', 'polite');
   el.textContent = text;
   root.append(el);
   setTimeout(() => {
