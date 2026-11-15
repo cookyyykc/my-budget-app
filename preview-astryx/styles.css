@@ -608,7 +608,7 @@ html[data-theme="dark"] .chip[data-meal="snack"]::after { content: " 🌝"; }
   border-radius: var(--r-full);
   background: var(--surface);
   color: var(--ink-2);
-  font-size: var(--fs-supporting);
+  font-size: 13px;
   font-weight: 500;
   box-shadow: var(--shadow-low);
   transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
@@ -631,7 +631,7 @@ html[data-theme="dark"] .chip[data-meal="snack"]::after { content: " 🌝"; }
   border-radius: var(--r-sm);
   background: var(--surface-sunk);
   color: var(--ink-2);
-  font-size: var(--fs-sub);
+  font-size: 13px;
   text-align: left;
   min-width: 0;
 }
@@ -648,7 +648,7 @@ html[data-theme="dark"] .chip[data-meal="snack"]::after { content: " 🌝"; }
   border-radius: var(--r-pill);
   background: var(--surface);
   color: var(--ink-2);
-  font-size: var(--fs-sub);
+  font-size: var(--fs-body);
   overflow-wrap: anywhere;
   transition: background .18s var(--ease-out), color .18s var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 }
@@ -828,13 +828,13 @@ html[data-online="false"] .offline-badge { display: block; }
   align-items: center;
   justify-content: center;
   gap: var(--sp-2);
-  min-height: 44px;
+  min-height: 50px;
   padding: 0 var(--sp-6);
   border-radius: var(--r-container);
   background: var(--accent);
   color: var(--accent-on);
   font-weight: 600;
-  font-size: var(--fs-body);
+  font-size: 16px;
   line-height: var(--lh-body);
   transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
 }
@@ -1219,7 +1219,7 @@ table.data tfoot tr + tr td { border-top: 1px solid var(--line); padding-top: va
 .nav-title { font-weight: 650; font-size: var(--fs-body); }
 
 .field { display: block; margin-bottom: var(--sp-4); }
-.field-lab { display: block; font-size: var(--fs-supporting); color: var(--ink-2); margin-bottom: 6px; font-weight: 500; }
+.field-lab { display: block; font-size: 13px; color: var(--ink-2); margin-bottom: 6px; font-weight: 500; }
 .field input[type="text"], .field input[type="number"], .field input[type="date"], .field input[type="time"] {
   width: 100%;
   min-height: 44px;
