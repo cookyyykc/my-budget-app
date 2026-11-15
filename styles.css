@@ -98,23 +98,25 @@
   --sp-13: 44px;
   --sp-14: 48px;
 
+  --fs-display: clamp(34px, 5.4vh, 46px);
+  --fs-display: clamp(34px, 5.4svh, 46px);
   --fs-display-lg: 42px;
   --fs-display-md: 35px;
   --fs-display-sm: 29px;
-  --fs-h1: 24px;
-  --fs-h2: 20px;
+  --fs-h1: 22px;
+  --fs-h2: 17px;
   --fs-h3: 17px;
   --fs-h4: 14px;
   --fs-h5: 12px;
   --fs-h6: 10px;
-  --fs-body: 14px;
+  --fs-body: 15px;
   --fs-body-lg: 17px;
   --fs-label: 14px;
-  --fs-supporting: 12px;
+  --fs-supporting: 13px;
   --fs-code: 14px;
   /* 向后兼容 */
-  --fs-sub: 12px;
-  --fs-micro: 10px;
+  --fs-sub: 13px;
+  --fs-micro: 11px;
   --lh-display: 1.2381;
   --lh-h1: 1.3333;
   --lh-h2: 1.4;
@@ -535,7 +537,7 @@ html[data-theme="dark"] .strip { border-bottom-color: transparent; }
   justify-content: center;
   padding: 8px 16px;
   border-radius: var(--r-full);
-  font-size: var(--fs-supporting);
+  font-size: var(--fs-sub);
   font-weight: 500;
   color: var(--ink-2);
   line-height: var(--lh-body);
@@ -648,7 +650,7 @@ html[data-theme="dark"] .chip[data-meal="snack"]::after { content: " 🌝"; }
   border-radius: var(--r-pill);
   background: var(--surface);
   color: var(--ink-2);
-  font-size: var(--fs-body);
+  font-size: var(--fs-sub);
   overflow-wrap: anywhere;
   transition: background .18s var(--ease-out), color .18s var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 }
@@ -859,7 +861,7 @@ html[data-online="false"] .offline-badge { display: block; }
 .btn--danger:active { background: color-mix(in srgb, var(--alert) 80%, var(--ink)); }
 .btn--sm {
   min-height: 44px;
-  font-size: var(--fs-supporting);
+  font-size: var(--fs-sub);
   padding: 0 var(--sp-4);
   border-radius: var(--r-element);
 }
@@ -981,7 +983,7 @@ html[data-online="false"] .offline-badge { display: block; }
   line-height: var(--lh-body);
 }
 .ledger-sub {
-  font-size: var(--fs-supporting);
+  font-size: var(--fs-micro);
   color: var(--ink-2);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   line-height: 1.4;
@@ -989,7 +991,7 @@ html[data-online="false"] .offline-badge { display: block; }
 }
 .ledger-amt {
   font-family: var(--num);
-  font-size: var(--fs-body);
+  font-size: 16px;
   font-weight: 600;
   white-space: nowrap;
   color: var(--ink);
@@ -1257,7 +1259,7 @@ table.data tfoot tr + tr td { border-top: 1px solid var(--line); padding-top: va
   color: var(--ink-2);
   cursor: not-allowed;
 }
-.field .hint { font-size: var(--fs-supporting); color: var(--ink-2); margin-top: 5px; }
+.field .hint { font-size: var(--fs-micro); color: var(--ink-2); margin-top: 5px; }
 
 /* ============================================================
    底部导航
@@ -1456,7 +1458,7 @@ table.data tfoot tr + tr td { border-top: 1px solid var(--line); padding-top: va
   color: var(--ink-inv);
   padding: 12px var(--sp-5);
   border-radius: var(--r-full);
-  font-size: var(--fs-supporting);
+  font-size: var(--fs-sub);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   line-height: var(--lh-supporting);
