@@ -65,11 +65,33 @@ export function closeSheet() {
   el.classList.remove('is-open');
   setTimeout(() => el.remove(), 300);
   document.removeEventListener('keydown', onSheetKey);
+  for (const node of document.body.children) {
+    if (node.hasAttribute('data-sheet-inert')) {
+      node.inert = false;
+      node.removeAttribute('data-sheet-inert');
+    }
+  }
   if (lastFocus?.isConnected) lastFocus.focus();
 }
 
 let lastFocus = null;
-function onSheetKey(e) { if (e.key === 'Escape') closeSheet(); }
+function sheetFocusable() {
+  return [...scrimEl.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+    .filter((el) => !el.closest('[hidden]') && el.getAttribute('aria-hidden') !== 'true');
+}
+function onSheetKey(e) {
+  if (e.key === 'Escape') { closeSheet(); return; }
+  if (e.key !== 'Tab' || !scrimEl) return;
+  const items = sheetFocusable();
+  if (!items.length) { e.preventDefault(); scrimEl.querySelector('[role="dialog"]')?.focus(); return; }
+  const first = items[0];
+  const last = items[items.length - 1];
+  if (e.shiftKey && (document.activeElement === first || !scrimEl.contains(document.activeElement))) {
+    e.preventDefault(); last.focus();
+  } else if (!e.shiftKey && (document.activeElement === last || !scrimEl.contains(document.activeElement))) {
+    e.preventDefault(); first.focus();
+  }
+}
 
 function bindSheetDrag(scrim, sheet) {
   const zone = sheet.querySelector('.sheet-drag-zone');
@@ -95,6 +117,7 @@ function bindSheetDrag(scrim, sheet) {
     if (!active) return;
     const dy = event.clientY - startY;
     if (prefersReducedMotion()) {
+      if (Math.abs(dy) >= 7) dragging = true;
       velocity = (event.clientY - lastY) / Math.max(1, performance.now() - lastTime);
       lastY = event.clientY;
       lastTime = performance.now();
@@ -127,11 +150,9 @@ function bindSheetDrag(scrim, sheet) {
       : sheet.getBoundingClientRect().top - sheet.parentElement.getBoundingClientRect().top;
     const shouldClose = offset > 88 || velocity > .52;
     if (prefersReducedMotion()) {
+      sheet.style.transform = '';
+      scrim.style.background = '';
       if (shouldClose) closeSheet();
-      else {
-        sheet.style.transform = '';
-        scrim.style.background = '';
-      }
       return;
     }
     if (shouldClose) {
@@ -178,6 +199,13 @@ export function openSheet({ title, body, footer = '', onMount }) {
   });
   document.addEventListener('keydown', onSheetKey);
 
+  for (const node of document.body.children) {
+    if (node.id !== 'sheet-root' && !node.inert) {
+      node.inert = true;
+      node.setAttribute('data-sheet-inert', '');
+    }
+  }
+  scrim.querySelector('[role="dialog"]').tabIndex = -1;
   document.getElementById('sheet-root').append(scrim);
   scrimEl = scrim;
   requestAnimationFrame(() => scrim.classList.add('is-open'));

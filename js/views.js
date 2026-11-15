@@ -926,6 +926,8 @@ export const statsView = {
               <p>本月还没有支出</p>
             </div>`;
         } else {
+          // 图例符号：除颜色外的第二识别线索（色盲/灰度下仍可区分）
+          const chartSymbol = { food: '●', life: '■', study: '▲', transport: '◆', fun: '✚', reserve: '⬟', other: '○' };
           pieContainer.innerHTML = `
             <div class="chart-pie-wrapper">
               ${pieChart(breakdown, { size: 200, centerLabel: fen.compact(breakdown.total) })}
@@ -934,7 +936,7 @@ export const statsView = {
               ${breakdown.categories.map(cat => `
                 <button class="chart-legend-item" type="button" data-chart-cat="${cat.id}">
                   <span class="chart-legend-dot" style="background:${cat.color}"></span>
-                  <span class="chart-legend-label">${esc(cat.name)}</span>
+                  <span class="chart-legend-label"><span class="chart-legend-symbol" aria-hidden="true">${chartSymbol[cat.id] || '●'}</span> ${esc(cat.name)}</span>
                   <span class="chart-legend-value">${fen.compact(cat.amount)} · ${cat.percent.toFixed(1)}%</span>
                 </button>
               `).join('')}
