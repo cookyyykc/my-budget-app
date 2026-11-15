@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>记账</title>
+
+<meta name="theme-color" content="#F4F5F1" />
+<meta name="description" content="大学生月度生活费记账：3 秒记一笔，看清三餐，不花超。" />
+
+<!-- 让 iPhone 上「添加到主屏幕」后以独立 App 形式启动 -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="记账" />
+<meta name="format-detection" content="telephone=no" />
+
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="icon" href="icons/icon-192.png" sizes="192x192" />
+<link rel="stylesheet" href="styles.css?v=31" />
+</head>
+
+<body>
+  <a class="skip-link" href="#main">跳到主内容</a>
+
+  <div class="app" id="app">
+    <main id="main" class="main" tabindex="-1"></main>
+    <nav id="tabbar" class="tabbar" aria-label="主导航"></nav>
+  </div>
+
+  <div id="sheet-root"></div>
+  <div class="offline-badge" aria-live="polite">离线 · 可继续记账</div>
+  <div id="toast-root" class="toast-root" role="status" aria-live="polite"></div>
+
+  <!-- iOS 27 液态玻璃（方案 C 调校版）：Chromium 上真折射，Safari 自动回退成纯材质 -->
+  <script src="js/hyalite.js?v=1"></script>
+  <script src="js/ios27-tabbar-hyalite.js?v=2"></script>
+  <script src="./version.js"></script>
+  <script type="module" src="js/app.js?v=29"></script>
+</body>
+</html>
