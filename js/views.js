@@ -166,7 +166,7 @@ export const recordView = {
           ${rec.type === 'expense' && activeCat.meals ? `
             <div class="meal-chips" role="group" aria-label="餐次">
               ${MEALS.map((m) => `
-                <button class="chip" type="button" data-meal="${m.id}" aria-pressed="${rec.mealType === m.id}">${m.name}</button>`).join('')}
+                <button class="chip" type="button" data-meal="${m.id}" aria-pressed="${rec.mealType === m.id}">${icon(m.icon, 15)}${m.name}</button>`).join('')}
             </div>` : ''}
 
           <div class="meta-row">
@@ -926,8 +926,7 @@ export const statsView = {
               <p>本月还没有支出</p>
             </div>`;
         } else {
-          // 图例符号：除颜色外的第二识别线索（色盲/灰度下仍可区分）
-          const chartSymbol = { food: '●', life: '■', study: '▲', transport: '◆', fun: '✚', reserve: '⬟', other: '○' };
+          // 图例图标：除颜色外的第二识别线索（色盲/灰度下仍可区分）
           pieContainer.innerHTML = `
             <div class="chart-pie-wrapper">
               ${pieChart(breakdown, { size: 200, centerLabel: fen.compact(breakdown.total) })}
@@ -935,8 +934,8 @@ export const statsView = {
             <div class="chart-legend">
               ${breakdown.categories.map(cat => `
                 <button class="chart-legend-item" type="button" data-chart-cat="${cat.id}">
-                  <span class="chart-legend-dot" style="background:${cat.color}"></span>
-                  <span class="chart-legend-label"><span class="chart-legend-symbol" aria-hidden="true">${chartSymbol[cat.id] || '●'}</span> ${esc(cat.name)}</span>
+                  <span class="chart-legend-icon" style="color:${cat.color}">${icon(catById(cat.id)?.icon || 'dots', 17)}</span>
+                  <span class="chart-legend-label">${esc(cat.name)}</span>
                   <span class="chart-legend-value">${fen.compact(cat.amount)} · ${cat.percent.toFixed(1)}%</span>
                 </button>
               `).join('')}

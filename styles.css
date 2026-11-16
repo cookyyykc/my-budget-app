@@ -606,6 +606,7 @@ html[data-theme="dark"] .chip[data-meal="snack"]::after { content: " 🌝"; }
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   padding: 10px 8px;
   border-radius: var(--r-full);
   background: var(--surface);
@@ -1869,12 +1870,11 @@ html[data-theme="dark"] .tab-indicator {
   background: var(--surface-sunk);
 }
 
-.chart-legend-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
-  flex-shrink: 0;
+.chart-legend-icon {
+  display: inline-flex;
+  flex: none;
 }
+
 
 .chart-legend-label {
   flex: 1;
